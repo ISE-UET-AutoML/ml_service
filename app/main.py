@@ -9,8 +9,9 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from image_classifier import routes as image_classifier_routes
-from tabular.classification import routes as tabular_classifier_routes
+from training_service import routes as training_service_routes
+#from training_service.image_classifier import routes as image_classifier_routes
+#from training_service.tabular.classification import routes as tabular_classifier_routes
 
 app = FastAPI()
 
@@ -24,9 +25,9 @@ def init():
 def read_root():
     return {"Hello": "World"}
 
-
-app.include_router(image_classifier_routes.router)
-app.include_router(tabular_classifier_routes.router)
+app.include_router(training_service_routes.router)
+#app.include_router(image_classifier_routes.router)
+#app.include_router(tabular_classifier_routes.router)
 
 
 # app.include_router(tabular_classifier_routes.router)

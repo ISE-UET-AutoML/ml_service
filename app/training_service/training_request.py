@@ -3,8 +3,6 @@ from nptyping import Byte
 from pydantic import BaseModel
 from pydantic.fields import Field
 
-from app.training_service.image_classifier.available_checkpoint import Timm_Checkpoint
-
 
 class TrainingRequest(BaseModel):
     # Mỗi user là 1 bucket riêng trong GCS

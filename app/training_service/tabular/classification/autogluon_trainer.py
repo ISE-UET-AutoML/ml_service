@@ -68,7 +68,7 @@ class AutogluonTrainer(object):
             print("autogluon trainer: feature metadata successfully")
             predictor = TabularPredictor(label=label, 
                                         path=str(model_path),
-                                        eval_metric='accuracy',
+                                        eval_metric='loss',
                                         **self.model_args)
             print("autogluon trainer: creta predictor successfully")
             # logging.basicConfig(level=logging.DEBUG)

@@ -3,14 +3,13 @@ from nptyping import Byte
 from pydantic import BaseModel
 from pydantic.fields import Field
 
-from app.training_service.training_request import TrainingRequest
+from app.model_service.train.training_request import TrainingRequest
 
-class TrainingRequest(TrainingRequest):
+class TabularTrainingRequest(TrainingRequest):
     # Mỗi user là 1 bucket riêng trong GCS
+    label_column: str = Field(default="label")
     training_argument: dict = Field(default =
     {
-        "data_args": {},
-        "ag_model_args": {},
         "ag_fit_args": {
             "time_limit": 60,
         }

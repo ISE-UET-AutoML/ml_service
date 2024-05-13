@@ -31,3 +31,4 @@ xgboost~=2.0.3
 requests~=2.31.0
 tabpfn~=0.1.10
 optuna~=3.5.0
+bayes_opt

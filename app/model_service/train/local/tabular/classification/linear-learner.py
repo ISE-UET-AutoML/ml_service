@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score, confusion_matrix, \
     classification_report, log_loss, matthews_corrcoef, balanced_accuracy_score
-from bayes_opt import BayesianOptimization
+from sklearn.bayes_opt import BayesianOptimization
 import os
 import subprocess
 import sys

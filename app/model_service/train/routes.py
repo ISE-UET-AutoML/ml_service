@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from training_service.local.image_classifier import routes as image_classifier_routes
-from training_service.local.tabular.classification import routes as tabular_classifier_routes
+from model_service.train.local.image_classifier import routes as image_classifier_routes
+from model_service.train.local.tabular.classification import routes as tabular_classifier_routes
 
 router = APIRouter(prefix="/api/training_service",tags=["training_service"])
 

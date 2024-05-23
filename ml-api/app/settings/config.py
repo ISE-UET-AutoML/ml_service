@@ -5,7 +5,6 @@ import pytz
 
 cfg = configparser.ConfigParser()
 cfg.read('./environment.ini')
-print(cfg)
 
 #=========================================================================
 #                           TIMING CONFIG
@@ -13,10 +12,15 @@ print(cfg)
 u = datetime.datetime.utcnow()
 u = u.replace(tzinfo=pytz.timezone("Asia/Ho_Chi_Minh"))
 
+
 #=========================================================================
 #                          PROJECT INFORMATION 
 #=========================================================================
 PROJECT = cfg['project']
+PROJECT_NAME = PROJECT['name']
+HOST = PROJECT['ml_api_host']
+PORT = PROJECT['ml_api_port']
+
 
 #=========================================================================
 #                          REDIS INFORMATION 

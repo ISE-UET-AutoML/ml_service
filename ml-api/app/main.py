@@ -1,41 +1,35 @@
-import os
-from fastapi import FastAPI, File, UploadFile
-from contextlib import asynccontextmanager
-import torch
 
-import logging
-from logging.handlers import TimedRotatingFileHandler
-
-torch.cuda.empty_cache()
-torch.set_float32_matmul_precision("medium")
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-from model_service.train import routes as training_service_routes
-
-# ++++++++++++++++++++++++++++++++++++++++++++ DEFINE APP +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-app = FastAPI()
-app = FastAPI(title="ml_service", openapi_url="/api/openapi.json", docs_url="/api/docs", redoc_url="/api/redoc")
+from ast import arg
+import queue
+import time
+import celery
+from settings import config
+from fastapi import FastAPI
 
 
-@asynccontextmanager  # lifespan cua context, sau nay su dung de release resource sau khi serve xong model
-def init():
-    pass
+app=FastAPI()
+celery_client=celery.Celery(broker=config.BROKER,backend=config.REDIS_BACKEND)
+if not celery_client:
+    exit()
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"Hello":"World"}
 
-app.include_router(training_service_routes.router)
+@app.post("/test_train")
+def test_train():
+    print("test train")
+    result = celery_client.send_task(
+        'model_service.train',
+        kwargs={'task_id':'123'},
+        queue='ml_celery'
+        )
+    time.sleep(10)
+    print("result: ",result)
+    return {"status":"success"}
+    #return {"result":result}
 
+if __name__=="__main__":
+    import uvicorn
+    uvicorn.run(app,host=config.HOST,port=int(config.PORT))
 
-# @serve.deployment(num_replicas=1, ray_actor_options={"num_cpus": 8, "num_gpus": 1})
-# @serve.ingress(app)
-# class FastAPIWrapper:
-#     pass
-
-if __name__ == "__main__":
-    # ray_app = FastAPIWrapper.bind()
-    os.system("uvicorn main:app --reload")
-    # os.system("serve run main:ray_app")

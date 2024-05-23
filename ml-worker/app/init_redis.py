@@ -9,7 +9,8 @@ def is_backend_running() -> bool:
             host=config.REDIS['host'],
             port=int(config.REDIS['port']),
             db=int(config.REDIS['db']),
-            password=config.REDIS['pass']
+            password=config.REDIS['pass'],
+            decode_responses=True
         )
         conn.client_list()  # Must perform an operation to check connection.
     except ConnectionError as e:

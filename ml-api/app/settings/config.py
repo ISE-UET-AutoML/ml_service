@@ -1,7 +1,7 @@
 import configparser
 import datetime
-import pytz 
-
+import pytz
+import celery
 
 cfg = configparser.ConfigParser()
 cfg.read('./environment.ini')
@@ -44,3 +44,8 @@ BROKER = "amqp://{user}:{pw}@{hostname}:{port}/{vhost}".format(
     port=RABBITMQ['post'],
     vhost=RABBITMQ['vhost']
 )
+
+#=========================================================================
+#                          CELERY INFORMATION
+#=========================================================================
+celery_client=celery.Celery(broker=BROKER,backend=REDIS_BACKEND)

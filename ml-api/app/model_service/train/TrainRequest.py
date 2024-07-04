@@ -13,18 +13,19 @@ class TrainRequest(BaseModel):
     projectName: str = Field(default="titanic", title="Project name")
     training_time: int = Field(default=60, title="Training Time")
     runName: str = Field(default="ISE", title="Run name")
+    dataset_url: str = Field(default="", title="Dataset URL")
     training_argument: dict = Field(default =
     {
-        "data_args": {},
+        "data_args": {            
+            "time_limit": 60,
+        },
         "ag_model_args": {        },
         "ag_fit_args": {        }
     }, title="Training arguments.")
 
 class TabularTrainRequest(TrainRequest):
     label_column: str = Field(default="label")
-    training_argument: dict = Field(default =
-    {
-        "ag_fit_args": {
-            "time_limit": 60,
-        }
-    }, title="Training arguments.")
+
+    
+class ImageClassifyTrainRequest(TrainRequest):
+    label_column: str = Field(default="label")

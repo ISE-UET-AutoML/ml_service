@@ -3,11 +3,10 @@ from nptyping import Byte
 from pydantic import BaseModel
 from pydantic.fields import Field
 
-from app.model_service.train.local.image_classifier.available_checkpoint import Timm_Checkpoint
+from available_checkpoint import Timm_Checkpoint
 
-from app.model_service.train.training_request import TrainingRequest
 
-class TrainingRequest(TrainingRequest):
+class TrainingRequest(BaseModel):
     # Mỗi user là 1 bucket riêng trong GCS
     training_argument: dict = Field(default =
     {

@@ -2,6 +2,7 @@ import configparser
 import datetime
 import pytz
 import celery
+import redis
 
 cfg = configparser.ConfigParser()
 cfg.read('./environment.ini')
@@ -31,6 +32,12 @@ REDIS_BACKEND = "redis://:{password}@{hostname}:{port}/{db}".format(
     password=REDIS['pass'],
     port=REDIS['port'],
     db=REDIS['db']
+)
+redis_client = redis.Redis(
+    host=REDIS['host'],
+    port=REDIS['port'],
+    db=REDIS['db'],
+    password=REDIS['pass']
 )
 
 #=========================================================================

@@ -70,7 +70,7 @@ class AutogluonTrainer(object):
                                         path=str(model_path),
                                         eval_metric='acc',
                                         **self.model_args)
-            print("autogluon trainer: creta predictor successfully")
+            print("autogluon trainer: create predictor successfully")
             # logging.basicConfig(level=logging.DEBUG)
             #split train and validation
             train_df, val_df = train_test_split(train_df, test_size=0.1)

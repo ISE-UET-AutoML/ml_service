@@ -90,7 +90,7 @@ async def predict(
             userEmail + "_" + projectName + "_" + runName + "_" + str(time),
         )
     )
-    redis_client.set(task_id, "PENDING")
+    redis_client.set(f"status-{task_id}", "PENDING")
 
     celery_client.send_task(
         "model_service.image_classify.predict",

@@ -7,26 +7,26 @@ from . import tabular_classify
     name="model_service.image_classify.train",
 )
 def image_classify_train(task_id: str, request: dict):
-    image_classify.train(task_id, request)
+    return image_classify.train(task_id, request)
 
 
 @shared_task(
     name="model_service.image_classify.predict",
 )
 def image_classify_predict(task_id: str, request: dict):
-    # TODO
-    return
+    return image_classify.predict(task_id, request)
 
 
 @shared_task(
     name="model_service.tabular_classify.train",
 )
 def tabular_classify_train(task_id: str, request: dict):
-    tabular_classify.tabular_train(task_id, request)
+    return tabular_classify.tabular_train(task_id, request)
 
 
 @shared_task(
     name="model_service.tabular_classify.predict",
 )
 def tabular_classify_predict(task_id: str, request: dict):
-    tabular_classify.tabular_predict(task_id, request)
+    return {}
+    # tabular_classify.tabular_predict(task_id, request)

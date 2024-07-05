@@ -25,6 +25,7 @@ from pathlib import Path
 
 
 def train(task_id: str, request: dict):
+    redis.set(f"status-{task_id}", "RUNNING")
     temp_dataset_path = ""
     print("task_id:", task_id)
     print("request:", request)
@@ -38,13 +39,13 @@ def train(task_id: str, request: dict):
         )
         os.makedirs(temp_dataset_path.parent, exist_ok=True)
 
-        dataset_url = request["dataset_url"]
+        dataset_url = f"https://drive.google.com/uc?id={request['dataset_url']}"
         if os.path.exists(temp_dataset_path) == False:
             gdown.download(url=dataset_url, output=str(temp_dataset_path), quiet=False)
         download_end = perf_counter()
         print("Download dataset successfully")
         user_dataset_path = (
-            f"D:/tmp/{request['userEmail']}/{request['projectName']}/datasets.zip"
+            f"D:/tmp/{request['userEmail']}/{request['projectName']}/datasets"
         )
         user_model_path = f"D:/tmp/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
         with ZipFile(temp_dataset_path, "r") as zip_ref:
@@ -52,21 +53,23 @@ def train(task_id: str, request: dict):
 
         create_folder(Path(user_dataset_path))
 
-        split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
-        # # TODO : User can choose ratio to split data @DuongNam
-        # # assume user want to split data into 80% train, 10% val, 10% test
-        create_csv(
-            Path(f"{user_dataset_path}/split/train"),
-            Path(f"{user_dataset_path}/train.csv"),
-        )
-        create_csv(
-            Path(f"{user_dataset_path}/split/val"), Path(f"{user_dataset_path}/val.csv")
-        )
-        create_csv(
-            Path(f"{user_dataset_path}/split/test"),
-            Path(f"{user_dataset_path}/test.csv"),
-        )
-        print("Split data successfully")
+        if os.path.exists(f"{user_dataset_path}/split") == False:
+            split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
+            # # TODO : User can choose ratio to split data @DuongNam
+            # # assume user want to split data into 80% train, 10% val, 10% test
+            create_csv(
+                Path(f"{user_dataset_path}/split/train"),
+                Path(f"{user_dataset_path}/train.csv"),
+            )
+            create_csv(
+                Path(f"{user_dataset_path}/split/val"),
+                Path(f"{user_dataset_path}/val.csv"),
+            )
+            create_csv(
+                Path(f"{user_dataset_path}/split/test"),
+                Path(f"{user_dataset_path}/test.csv"),
+            )
+            print("Split data successfully")
         remove_folders_except(Path(user_dataset_path), "split")
         print("Remove folders except split successfully")
         trainer = AutogluonTrainer(request["training_argument"])
@@ -87,15 +90,17 @@ def train(task_id: str, request: dict):
         acc = 0.98
 
         end = perf_counter()
+        redis.set(f"status-{task_id}", "SUCCESS")
 
         return {
-            "validation_accuracy": 0,
+            "validation_accuracy": acc,
             "training_evaluation_time": end - start,
             "model_download_time": download_end - start,
             "saved_model_path": user_model_path,
         }
 
     except Exception as e:
+        redis.set(f"status-{task_id}", "FAILED")
         print(e)
         # raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
     finally:

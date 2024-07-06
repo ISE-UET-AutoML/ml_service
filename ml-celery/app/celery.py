@@ -29,8 +29,8 @@ app = Celery(
 )
 app.autodiscover_tasks(
     [
-        "ml-worker.app.services.model_service",
+        "ml-celery.app.services.model_service",
     ]
 )
-app.config_from_object("ml-worker.app.settings.celery_config")
+app.config_from_object("ml-celery.app.settings.celery_config")
 app.conf.broker_connection_retry_on_startup = True

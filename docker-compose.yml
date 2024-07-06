@@ -8,8 +8,9 @@ services:
         command: redis-server --requirepass password
         volumes:
             - redis-data:/data
+            - ./redis-logs:/logs/
         ports:
-            - 8671:8671
+            - 8671:6379
         networks:
             - mlnet
 
@@ -18,7 +19,7 @@ services:
         image: rabbitmq:3-management-alpine
         container_name: "rabbitmq"
         ports:
-            - 8672:8672
+            - 8672:5672
         environment:
             - RABBITMQ_DEFAULT_USER=guest
             - RABBITMQ_DEFAULT_PASS=guest
@@ -41,8 +42,12 @@ services:
             - ./api-logs:/logs/
         ports:
             - 8670:8670
+        depends_on:
+            - rabbitmq
+            - redis
         networks:
             - mlnet
+
     
     ml-celery:
         build: 
@@ -54,8 +59,12 @@ services:
         volumes:
             - ./ml-celery/app:/ml-celery/app/
             - ./celery-logs:/logs/
+        depends_on:
+            - rabbitmq
+            - redis
         networks:
             - mlnet 
+        
 
 networks:
     mlnet:

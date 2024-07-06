@@ -59,6 +59,7 @@ services:
         volumes:
             - ./ml-celery/app:/ml-celery/app/
             - ./celery-logs:/logs/
+            - ./celery-data:/celery-data/
         depends_on:
             - rabbitmq
             - redis

@@ -9,7 +9,7 @@ autogluon==1.0.0
 # torchvision==0.15.2
 # tqdm==4.65.2
 split-folders==0.5.1
-google-cloud-storage==2.14.0
+# google-cloud-storage==2.14.0
 # ray==2.9.0
 redis==5.0.1
 celery==5.3.6
@@ -20,7 +20,6 @@ pydantic==1.10.13
 
 platformdirs~=3.11.0
 Pillow~=10.1.0
-pika~=1.3.2
 torch~=2.0.1
 Jinja2~=3.1.3
 pandas~=2.1.4
@@ -32,7 +31,6 @@ xgboost~=2.0.3
 requests~=2.31.0
 tabpfn~=0.1.10
 optuna~=3.5.0
-bayesian-optimization
 
 gunicorn==20.1.0
 python-multipart==0.0.5
@@ -44,4 +42,3 @@ pycryptodome==3.10.1
 alembic==1.6.5
 datetime==4.3
 flower==1.0.0
-watchdog

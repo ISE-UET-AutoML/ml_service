@@ -1,4 +1,3 @@
-version: "3.8"
 
 services:
     # Redis
@@ -10,7 +9,7 @@ services:
         volumes:
             - redis-data:/data
         ports:
-            - 6379:6379
+            - 8671:8671
         networks:
             - mlnet
 
@@ -19,8 +18,7 @@ services:
         image: rabbitmq:3-management-alpine
         container_name: "rabbitmq"
         ports:
-            - 5672:5672
-            - 15672:15672
+            - 8672:8672
         environment:
             - RABBITMQ_DEFAULT_USER=guest
             - RABBITMQ_DEFAULT_PASS=guest
@@ -29,6 +27,35 @@ services:
             - rabbitmq-logs:/var/log/rabbitmq
         networks:
             - mlnet
+
+    # API server
+    ml-api:
+        build:
+            context: ./
+            dockerfile: ./ml-api/Dockerfile
+        container_name: ml-api
+        restart: unless-stopped
+        command: sh -c "python ml-api/app/main.py"
+        volumes:
+            - ./ml-api/app:/ml-api/app/
+            - ./api-logs:/logs/
+        ports:
+            - 8670:8670
+        networks:
+            - mlnet
+    
+    ml-celery:
+        build: 
+            context: ./
+            dockerfile: ./ml-celery/Dockerfile
+        container_name: ml-celery
+        restart: unless-stopped
+        command: sh -c "celery -A ml-celery.app.celery worker --loglevel=info --concurrency=1 -P threads -E --logfile=/logs/celery.log"
+        volumes:
+            - ./ml-celery/app:/ml-celery/app/
+            - ./celery-logs:/logs/
+        networks:
+            - mlnet 
 
 networks:
     mlnet:

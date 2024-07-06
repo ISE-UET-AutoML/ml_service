@@ -1,0 +1,22 @@
+{
+    "templates": [
+        {
+            "api": "image_classify_train",
+            "sample request": {
+                "userEmail": "test_image_train",
+                "projectName": "titanic",
+                "training_time": 60,
+                "runName": "ISE",
+                "dataset_url": "1yIkh7Wvu4Lk1o6gVIuyXTb3l9zwNXOCE",
+                "training_argument": {
+                    "data_args": {
+                        "time_limit": 60
+                    },
+                    "ag_model_args": {},
+                    "ag_fit_args": {}
+                },
+                "label_column": "label"
+            }
+        }
+    ]
+}

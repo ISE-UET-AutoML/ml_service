@@ -58,8 +58,8 @@ services:
         command: sh -c "celery -A ml-celery.app.celery worker --loglevel=info --concurrency=1 -P threads -E --logfile=/logs/celery.log"
         volumes:
             - ./ml-celery/app:/ml-celery/app/
-            - ./celery-logs:/logs/
-            - ./celery-data:/celery-data/
+            - ./celery-logs/:/logs/
+            - ./tmp/:/tmp/
         depends_on:
             - rabbitmq
             - redis

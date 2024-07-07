@@ -161,9 +161,8 @@ cython_debug/
 #.idea/
 
 #docker volume
-.api-logs/
-.celery-logs/
-.redis-logs/
-.api-logs
-.celery-logs
-.redis-logs
+api-logs/
+celery-logs/
+redis-logs/
+
+tmp/

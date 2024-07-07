@@ -3,11 +3,11 @@
         {
             "api": "image_classify_train",
             "sample request": {
-                "userEmail": "test_image_train",
-                "projectName": "titanic",
+                "userEmail": "test-automl",
+                "projectName": "4-animal",
                 "training_time": 60,
                 "runName": "ISE",
-                "dataset_url": "1yIkh7Wvu4Lk1o6gVIuyXTb3l9zwNXOCE",
+                "dataset_url": "1QEhox5PADwRiL8h_cWtpp2vb229rKRXE",
                 "training_argument": {
                     "data_args": {
                         "time_limit": 60
@@ -16,6 +16,14 @@
                     "ag_fit_args": {}
                 },
                 "label_column": "label"
+            }
+        },
+        {
+            "api": "image_classify_predict",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "4-animal",
+                "runName": "ISE"
             }
         }
     ]

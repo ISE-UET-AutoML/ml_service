@@ -10,6 +10,8 @@ from time import perf_counter
 import os
 import uuid
 import joblib
+from settings.config import TEMP_DIR
+
 
 
 async def train(request: dict):
@@ -21,7 +23,7 @@ async def train(request: dict):
     try:
         # temp folder to store dataset and then delete after training
         temp_dataset_path = Path(
-            f"D:/tmp/{request['userEmail']}/{request['projectName']}"
+            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}"
         )
 
         os.makedirs(temp_dataset_path.parent, exist_ok=True)
@@ -39,8 +41,8 @@ async def train(request: dict):
         # if res is None or not res:
         #     raise ValueError("Error in downloading data")
 
-        # user_dataset_path = f"D:/tmp/{request.userEmail}/{request.projectName}/datasets"
-        user_model_path = f"D:/tmp/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
+        # user_dataset_path = f"{TEMP_DIR}/{request.userEmail}/{request.projectName}/datasets"
+        user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
 
         # create_folder(Path(user_dataset_path))
 

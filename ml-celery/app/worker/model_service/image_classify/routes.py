@@ -1,9 +1,17 @@
 #! DEPRECATED
 import asyncio
-from app.utils.dataset_utils import find_latest_model, split_data, create_csv, remove_folders_except, create_folder
+from app.utils.dataset_utils import (
+    find_latest_model,
+    split_data,
+    create_csv,
+    remove_folders_except,
+    create_folder,
+)
 from app.utils import storage
 from app.model_service.train.local.image_classifier.model import TrainingRequest
-from app.model_service.train.local.image_classifier.autogluon_trainer import AutogluonTrainer
+from app.model_service.train.local.image_classifier.autogluon_trainer import (
+    AutogluonTrainer,
+)
 from fastapi import HTTPException
 import os
 import joblib
@@ -16,11 +24,15 @@ import pandas as pd
 import warnings
 from autogluon.multimodal import MultiModalPredictor
 
-warnings.filterwarnings('ignore')
+from settings.config import TEMP_DIR
+
+warnings.filterwarnings("ignore")
 
 router = APIRouter()
 
-memory = joblib.Memory("D:/tmp", verbose=0, mmap_mode="r", bytes_limit=1024 * 1024 * 1024 * 100)
+memory = joblib.Memory(
+    f"{TEMP_DIR}", verbose=0, mmap_mode="r", bytes_limit=1024 * 1024 * 1024 * 100
+)
 
 
 @memory.cache
@@ -28,8 +40,12 @@ def load_model_from_path(model_path: str) -> MultiModalPredictor:
     return MultiModalPredictor.load(model_path)
 
 
-async def load_model(user_name: str, project_name: str, run_name: str) -> MultiModalPredictor:
-    model_path = find_latest_model(f"D:/tmp/{user_name}/{project_name}/trained_models/{run_name}")
+async def load_model(
+    user_name: str, project_name: str, run_name: str
+) -> MultiModalPredictor:
+    model_path = find_latest_model(
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+    )
     return load_model_from_path(model_path)
 
 
@@ -39,28 +55,34 @@ async def handler(request: TrainingRequest):
     temp_dataset_path = ""
     start = perf_counter()
     print("Training request received")
-    request.training_argument['ag_fit_args']['time_limit'] = request.training_time
+    request.training_argument["ag_fit_args"]["time_limit"] = request.training_time
     try:
         # temp folder to store dataset and then delete after training
-        temp_dataset_path = Path(f"D:/tmp/{request.userEmail}/{request.projectName}/datasets.zip")
-        
+        temp_dataset_path = Path(
+            f"{TEMP_DIR}/{request.userEmail}/{request.projectName}/datasets.zip"
+        )
+
         os.makedirs(temp_dataset_path.parent, exist_ok=True)
 
-        res = await (storage.download_blob_async(request.userEmail,
-                                                 f"{request.projectName}/datasets/datasets.zip",
-                                                 temp_dataset_path))
+        res = await storage.download_blob_async(
+            request.userEmail,
+            f"{request.projectName}/datasets/datasets.zip",
+            temp_dataset_path,
+        )
 
         download_end = perf_counter()
 
         if res is None or not res:
             raise ValueError("Error in downloading folder")
 
-        user_dataset_path = f"D:/tmp/{request.userEmail}/{request.projectName}/datasets"
-        user_model_path = f"D:/tmp/{request.userEmail}/{request.projectName}/trained_models/{request.runName}/{uuid.uuid4()}"
+        user_dataset_path = (
+            f"{TEMP_DIR}/{request.userEmail}/{request.projectName}/datasets"
+        )
+        user_model_path = f"{TEMP_DIR}/{request.userEmail}/{request.projectName}/trained_models/{request.runName}/{uuid.uuid4()}"
 
         create_folder(Path(user_dataset_path))
 
-        with ZipFile(temp_dataset_path, 'r') as zip_ref:
+        with ZipFile(temp_dataset_path, "r") as zip_ref:
             zip_ref.extractall(user_dataset_path)
 
         split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
@@ -68,12 +90,17 @@ async def handler(request: TrainingRequest):
         # # TODO : User can choose ratio to split data @DuongNam
         # # assume user want to split data into 80% train, 10% val, 10% test
 
-        create_csv(Path(f"{user_dataset_path}/split/train"),
-                   Path(f"{user_dataset_path}/train.csv"))
-        create_csv(Path(f"{user_dataset_path}/split/val"),
-                   Path(f"{user_dataset_path}/val.csv"))
-        create_csv(Path(f"{user_dataset_path}/split/test"),
-                   Path(f"{user_dataset_path}/test.csv"))
+        create_csv(
+            Path(f"{user_dataset_path}/split/train"),
+            Path(f"{user_dataset_path}/train.csv"),
+        )
+        create_csv(
+            Path(f"{user_dataset_path}/split/val"), Path(f"{user_dataset_path}/val.csv")
+        )
+        create_csv(
+            Path(f"{user_dataset_path}/split/test"),
+            Path(f"{user_dataset_path}/test.csv"),
+        )
         print("Split data successfully")
         remove_folders_except(Path(user_dataset_path), "split")
         print("Remove folders except split successfully")
@@ -81,17 +108,16 @@ async def handler(request: TrainingRequest):
         print("Create trainer successfully")
         # training job của mình sẽ chạy ở đây
         model = await trainer.train_async(
-            'label',
+            "label",
             Path(f"{user_dataset_path}/train.csv"),
             Path(f"{user_dataset_path}/val.csv"),
-            Path(f"{user_model_path}")
+            Path(f"{user_model_path}"),
         )
         print("Training model successfully")
         if model is None:
             raise ValueError("Error in training model")
 
-        acc = AutogluonTrainer.evaluate(
-            model, Path(f"{user_dataset_path}/test.csv"))
+        acc = AutogluonTrainer.evaluate(model, Path(f"{user_dataset_path}/test.csv"))
         print("Evaluate model successfully")
         acc = 0.98
 
@@ -107,7 +133,7 @@ async def handler(request: TrainingRequest):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Error in training: {str(e)}")
-        #raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
+        # raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
     finally:
         if os.path.exists(temp_dataset_path):
             os.remove(temp_dataset_path)
@@ -115,17 +141,17 @@ async def handler(request: TrainingRequest):
 
 @router.post("/image_classifier/predict", tags=["image_classifier"])
 async def predict(
-        userEmail: str = Form("lexuanan18102004"),
-        projectName: str = Form("flower-classifier"),
-        runName: str = Form("Model-v0"),
-        image: UploadFile = File(...)
+    userEmail: str = Form("lexuanan18102004"),
+    projectName: str = Form("flower-classifier"),
+    runName: str = Form("Model-v0"),
+    image: UploadFile = File(...),
 ):
     print(userEmail)
     print("Run Name:", runName)
     try:
 
         # write the image to a temporary file
-        temp_image_path = f"D:/tmp/{userEmail}/{projectName}/temp.jpg"
+        temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
         os.makedirs(Path(temp_image_path).parent, exist_ok=True)
         with open(temp_image_path, "wb") as buffer:
             buffer.write(await image.read())
@@ -135,10 +161,7 @@ async def predict(
         model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        predictions = model.predict(temp_image_path,
-                                    realtime=True,
-                                    save_results=True
-                                    )
+        predictions = model.predict(temp_image_path, realtime=True, save_results=True)
         proba: float = 0.98
 
         return {
@@ -150,8 +173,7 @@ async def predict(
             "predictions": str(predictions),
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error in prediction: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in prediction: {str(e)}")
     finally:
         if os.path.exists(temp_image_path):
             os.remove(temp_image_path)
@@ -161,7 +183,9 @@ async def evaluate_async(model: MultiModalPredictor, test_data_path: str) -> flo
     try:
         test_data = await asyncio.to_thread(pd.read_csv, test_data_path)
 
-        accuracy = await asyncio.to_thread(model.evaluate, test_data, chunk_size=4096, realtime=True)
+        accuracy = await asyncio.to_thread(
+            model.evaluate, test_data, chunk_size=4096, realtime=True
+        )
         return accuracy
     except Exception as e:
         raise e
@@ -169,16 +193,17 @@ async def evaluate_async(model: MultiModalPredictor, test_data_path: str) -> flo
 
 @router.post("/image_classifier/accuracy", tags=["image_classifier"])
 async def get_accuracy(
-        user_name: str = Form("lexuanan18102004"),
-        project_name: str = Form("flower-classifier"),
+    user_name: str = Form("lexuanan18102004"),
+    project_name: str = Form("flower-classifier"),
 ):
     try:
         model = await load_model(user_name, project_name)
-        test_data_path = f"D:/tmp/{user_name}/{project_name}/datasets/test.csv"
+        test_data_path = f"{TEMP_DIR}/{user_name}/{project_name}/datasets/test.csv"
         acc = await evaluate_async(model, test_data_path)
         return {
             "accuracy": acc,
         }
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Error in getting accuracy: {str(e)}")
+            status_code=500, detail=f"Error in getting accuracy: {str(e)}"
+        )

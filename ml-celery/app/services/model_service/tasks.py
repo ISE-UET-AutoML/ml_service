@@ -1,32 +1,46 @@
+import time
 from celery import shared_task
 from . import image_classify
 from . import tabular_classify
 
 
 @shared_task(
+    bind=True,
+    name="time_test",
+)
+def time_test(self, request: dict):
+    time.sleep(10)
+    return "time_test"
+
+
+@shared_task(
+    bind=True,
     name="model_service.image_classify.train",
 )
-def image_classify_train(task_id: str, request: dict):
-    return image_classify.train(task_id, request)
+def image_classify_train(self, request: dict):
+    return image_classify.train(self.request.id, request)
+
+
+# @shared_task(
+#     bind=True,
+#     name="model_service.image_classify.predict",
+# )
+# def image_classify_predict(self, request: dict):
+#     return image_classify.predict(self.request.id, request)
 
 
 @shared_task(
-    name="model_service.image_classify.predict",
-)
-def image_classify_predict(task_id: str, request: dict):
-    return image_classify.predict(task_id, request)
-
-
-@shared_task(
+    bind=True,
     name="model_service.tabular_classify.train",
 )
-def tabular_classify_train(task_id: str, request: dict):
-    return tabular_classify.tabular_train(task_id, request)
+def tabular_classify_train(self, request: dict):
+    return tabular_classify.tabular_train(self.request.id, request)
 
 
-@shared_task(
-    name="model_service.tabular_classify.predict",
-)
-def tabular_classify_predict(task_id: str, request: dict):
-    return {}
-    # tabular_classify.tabular_predict(task_id, request)
+# @shared_task(
+#     bind=True,
+#     name="model_service.tabular_classify.predict",
+# )
+# def tabular_classify_predict(self, request: dict):
+#     return {}
+#     # tabular_classify.tabular_predict(task_id, request)

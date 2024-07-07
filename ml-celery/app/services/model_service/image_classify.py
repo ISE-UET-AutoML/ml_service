@@ -11,6 +11,7 @@ from worker.model_service.image_classify.autogluon_trainer import AutogluonTrain
 import uuid
 from autogluon.multimodal import MultiModalPredictor
 import joblib
+from settings.config import TEMP_DIR
 
 
 from utils.dataset_utils import (
@@ -35,7 +36,7 @@ def train(task_id: str, request: dict):
     try:
         # temp folder to store dataset and then delete after training
         temp_dataset_path = Path(
-            f"D:/tmp/{request['userEmail']}/{request['projectName']}/data.zip"
+            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/data.zip"
         )
         os.makedirs(temp_dataset_path.parent, exist_ok=True)
 
@@ -45,9 +46,9 @@ def train(task_id: str, request: dict):
         download_end = perf_counter()
         print("Download dataset successfully")
         user_dataset_path = (
-            f"D:/tmp/{request['userEmail']}/{request['projectName']}/datasets"
+            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/datasets"
         )
-        user_model_path = f"D:/tmp/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
+        user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
         with ZipFile(temp_dataset_path, "r") as zip_ref:
             zip_ref.extractall(user_dataset_path)
 
@@ -100,7 +101,6 @@ def train(task_id: str, request: dict):
         }
 
     except Exception as e:
-        redis.set(f"status-{task_id}", "FAILED")
         print(e)
         # raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
     finally:
@@ -110,7 +110,7 @@ def train(task_id: str, request: dict):
 
 
 memory = joblib.Memory(
-    "D:/tmp", verbose=0, mmap_mode="r", bytes_limit=1024 * 1024 * 1024 * 100
+    f"{TEMP_DIR}", verbose=0, mmap_mode="r", bytes_limit=1024 * 1024 * 1024 * 100
 )
 
 
@@ -123,7 +123,7 @@ async def load_model(
     user_name: str, project_name: str, run_name: str
 ) -> MultiModalPredictor:
     model_path = find_latest_model(
-        f"D:/tmp/{user_name}/{project_name}/trained_models/{run_name}"
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
     )
     return load_model_from_path(model_path)
 
@@ -137,7 +137,7 @@ async def predict(task_id: str, request: dict):
     print("Run Name:", runName)
     try:
         # write the image to a temporary file
-        temp_image_path = f"D:/tmp/{userEmail}/{projectName}/temp.jpg"
+        temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
         os.makedirs(Path(temp_image_path).parent, exist_ok=True)
         with open(temp_image_path, "wb") as buffer:
             buffer.write(await image.read())

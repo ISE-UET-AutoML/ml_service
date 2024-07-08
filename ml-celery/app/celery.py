@@ -35,3 +35,4 @@ app.autodiscover_tasks(
 app.config_from_object("ml-celery.app.settings.celery_config")
 app.conf.broker_connection_retry_on_startup = True
 app.conf.task_track_started = True
+app.conf.worker_redirect_stdouts = False

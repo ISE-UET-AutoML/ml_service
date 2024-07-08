@@ -9,11 +9,20 @@
                 "runName": "ISE",
                 "dataset_url": "1QEhox5PADwRiL8h_cWtpp2vb229rKRXE",
                 "training_argument": {
-                    "data_args": {
-                        "time_limit": 60
+                    "data_args": {},
+                    "ag_model_args": {
+                        "pretrained": true,
+                        "hyperparameters": {
+                            "model.timm_image.checkpoint_name": "swin_small_patch4_window7_224"
+                        }
                     },
-                    "ag_model_args": {},
-                    "ag_fit_args": {}
+                    "ag_fit_args": {
+                        "time_limit": 60,
+                        "hyperparameters": {
+                            "env.per_gpu_batch_size": 4,
+                            "env.batch_size": 4
+                        }
+                    }
                 },
                 "label_column": "label"
             }
@@ -24,6 +33,22 @@
                 "userEmail": "test-automl",
                 "projectName": "4-animal",
                 "runName": "ISE"
+            }
+        },
+        {
+            "api": "tabular_classify_train",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "titanic",
+                "training_time": 60,
+                "runName": "ISE",
+                "dataset_url": "1s092W0IggF4dWUjYsy1Bj3GVIW1EPAs5",
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 60
+                    }
+                },
+                "label_column": "Survived"
             }
         }
     ]

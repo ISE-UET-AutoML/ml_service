@@ -11,10 +11,10 @@ import os
 import uuid
 import joblib
 from settings.config import TEMP_DIR
+import gdown
 
 
-
-async def train(request: dict):
+def train(task_id: str, request: dict):
     print("Tabular Training request received")
     temp_dataset_path = ""
     start = perf_counter()
@@ -23,31 +23,19 @@ async def train(request: dict):
     try:
         # temp folder to store dataset and then delete after training
         temp_dataset_path = Path(
-            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}"
+            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/data.csv"
         )
 
         os.makedirs(temp_dataset_path.parent, exist_ok=True)
 
         print("make temp folder successfully")
-        # res = await storage.download_blob_async(
-        #     request["userEmail"],
-        #     f"{request["projectName"]}/datasets/datasets.csv",
-        #     f"{temp_dataset_path}/datasets.csv",
-        # )
-
+        dataset_url = f"https://drive.google.com/uc?id={request['dataset_url']}"
+        if os.path.exists(temp_dataset_path) == False:
+            gdown.download(url=dataset_url, output=str(temp_dataset_path), quiet=False)
         download_end = perf_counter()
-        print("download dataset successfully")
+        print("Download dataset successfully")
 
-        # if res is None or not res:
-        #     raise ValueError("Error in downloading data")
-
-        # user_dataset_path = f"{TEMP_DIR}/{request.userEmail}/{request.projectName}/datasets"
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
-
-        # create_folder(Path(user_dataset_path))
-
-        # with ZipFile(temp_dataset_path, 'r') as zip_ref:
-        #     zip_ref.extractall(user_dataset_path)
 
         # split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
 
@@ -60,12 +48,13 @@ async def train(request: dict):
         #            Path(f"{user_dataset_path}/val.csv"))
         # create_csv(Path(f"{user_dataset_path}/split/test"),
         #            Path(f"{user_dataset_path}/test.csv"))
-        train_path = f"{temp_dataset_path}/datasets.csv"
+        train_path = f"{temp_dataset_path}"
         # test_path=os.path.dirname(__file__)+"/titanic/test.csv"
         # print("Split data successfully")
         # remove_folders_except(Path(user_dataset_path), "split")
         # print("Remove folders except split successfully")
 
+        print(request["training_argument"])
         trainer = AutogluonTrainer(request["training_argument"])
         # trainer = AutogluonTrainer()
 
@@ -74,7 +63,7 @@ async def train(request: dict):
         target = request["label_column"]
         print("Create trainer successfully")
 
-        model = trainer.train(target, train_path, None, user_model_path)
+        model = trainer.train(target, train_path, 0.2, None, user_model_path)
 
         if model is None:
             raise ValueError("Error in training model")
@@ -92,9 +81,9 @@ async def train(request: dict):
     except Exception as e:
         print(e)
         # raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
-    # finally:
-    # if os.path.exists(temp_dataset_path):
-    # os.remove(temp_dataset_path)
+    finally:
+        if os.path.exists(temp_dataset_path):
+            os.remove(temp_dataset_path)
 
 
 def predict(task_id: str, request: dict):

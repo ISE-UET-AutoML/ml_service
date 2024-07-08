@@ -10,7 +10,7 @@ class MlResult(BaseModel):
 
 
 class TrainRequest(BaseModel):
-    userEmail: str = Field(default="test-automl-bucket1", title="userEmail without @")
+    userEmail: str = Field(default="test-automl", title="userEmail without @")
     projectName: str = Field(default="titanic", title="Project name")
     training_time: int = Field(default=60, title="Training Time")
     runName: str = Field(default="ISE", title="Run name")
@@ -19,19 +19,48 @@ class TrainRequest(BaseModel):
     )
     training_argument: dict = Field(
         default={
-            "data_args": {
+            # "data_args": {},
+            # "ag_model_args": {},
+            "ag_fit_args": {
                 "time_limit": 60,
             },
-            "ag_model_args": {},
-            "ag_fit_args": {},
         },
         title="Training arguments.",
     )
 
 
 class TabularTrainRequest(TrainRequest):
-    label_column: str = Field(default="label")
+    label_column: str = Field(
+        default="Survived", description="Survived for titanic dataset"
+    )
+
+
+from dataclasses import dataclass
+
+
+@dataclass
+class Timm_Checkpoint:
+    swin_small_patch4_window7_224: str = "swin_small_patch4_window7_224"
+    swin_base_patch4_window7_224: str = "swin_base_patch4_window7_224"
+    swin_large_patch4_window7_224: str = "swin_large_patch4_window7_224"
+    swin_large_patch4_window12_384: str = "swin_large_patch4_window12_384"
 
 
 class ImageClassifyTrainRequest(TrainRequest):
     label_column: str = Field(default="label")
+    training_argument: dict = Field(
+        default={
+            "data_args": {},
+            "ag_model_args": {
+                "pretrained": True,
+                "hyperparameters": {
+                    "model.timm_image.checkpoint_name": Timm_Checkpoint.swin_small_patch4_window7_224,
+                },
+            },
+            "ag_fit_args": {
+                "time_limit": 60,
+                "hyperparameters": {"env.per_gpu_batch_size": 4, "env.batch_size": 4},
+            },
+        },
+        title="Training arguments.",
+    )

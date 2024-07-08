@@ -34,7 +34,7 @@ def image_classify_train(self, request: dict):
     name="model_service.tabular_classify.train",
 )
 def tabular_classify_train(self, request: dict):
-    return tabular_classify.tabular_train(self.request.id, request)
+    return tabular_classify.train(self.request.id, request)
 
 
 # @shared_task(

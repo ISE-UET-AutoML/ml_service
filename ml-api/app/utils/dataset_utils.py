@@ -6,7 +6,14 @@ import glob
 from typing import Union
 
 
-def split_data(input_folder: Path, output_folder, ratio=(0.8, 0.1, 0.1), seed=1337, group_prefix=None, move=False):
+def split_data(
+    input_folder: Path,
+    output_folder,
+    ratio=(0.8, 0.1, 0.1),
+    seed=1337,
+    group_prefix=None,
+    move=False,
+):
     """
     Splits a dataset into training, validation, and testing sets.
 
@@ -22,19 +29,25 @@ def split_data(input_folder: Path, output_folder, ratio=(0.8, 0.1, 0.1), seed=13
     None
     """
     try:
-        splitfolders.ratio(input_folder, output=output_folder, seed=seed,
-                           ratio=ratio, group_prefix=group_prefix, move=move)
+        splitfolders.ratio(
+            input_folder,
+            output=output_folder,
+            seed=seed,
+            ratio=ratio,
+            group_prefix=group_prefix,
+            move=move,
+        )
         print("Data splitting completed successfully.")
     except Exception as e:
         print(f"An error occurred during data splitting: {e}")
 
 
 def create_csv(directory: Path, output_file: Path):
-    with open(output_file, mode='w') as f:
-        f.write('image,label\n')
+    with open(output_file, mode="w") as f:
+        f.write("image,label\n")
         for path, _, files in os.walk(directory):
             for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                if file.lower().endswith((".png", ".jpg", ".jpeg")):
                     label = Path(path).name
                     f.write(f"{os.path.join(path, file)},{label}\n")
 
@@ -76,7 +89,13 @@ def find_latest_model(user_model_path: str) -> Union[str, None]:
     Returns:
         Union[str, None]: _description_
     """
-    pattern = os.path.join(user_model_path, '**', '*.ckpt')
+    pattern = os.path.join(user_model_path, "**", "*.ckpt")
+    list_of_files = glob.glob(pattern, recursive=True)
+    return max(list_of_files, key=os.path.getctime) if list_of_files else None
+
+
+def find_latest_tabular_model(user_model_path: str) -> Union[str, None]:
+    pattern = os.path.join(user_model_path, "**", "predictor.pkl")
     list_of_files = glob.glob(pattern, recursive=True)
     return max(list_of_files, key=os.path.getctime) if list_of_files else None
 
@@ -87,7 +106,7 @@ def write_image_to_temp_file(image, temp_image_path):
 
 
 def model_size(user_model_path):
-    pattern = os.path.join(user_model_path, '**', '*.ckpt')
+    pattern = os.path.join(user_model_path, "**", "*.ckpt")
     list_of_files = glob.glob(pattern, recursive=True)
     model_size = 0
     for file in list_of_files:

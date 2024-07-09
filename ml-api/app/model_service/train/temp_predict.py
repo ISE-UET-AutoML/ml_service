@@ -1,17 +1,20 @@
 from email.mime import image
+from io import StringIO
 import re
 from zipfile import ZipFile
-from celery import shared_task
 from fastapi import APIRouter, File, Form, UploadFile
+import pandas
 from sympy import false, use
 from time import perf_counter
 from autogluon.multimodal import MultiModalPredictor
+from autogluon.tabular import TabularPredictor
 import joblib
 from settings.config import TEMP_DIR
 
 
 from utils.dataset_utils import (
     find_latest_model,
+    find_latest_tabular_model,
     split_data,
     create_csv,
     remove_folders_except,
@@ -32,13 +35,30 @@ def load_model_from_path(model_path: str) -> MultiModalPredictor:
     return MultiModalPredictor.load(model_path)
 
 
+@memory.cache
+def load_tabular_model_from_path(model_path: str) -> TabularPredictor:
+    #! tabular predictor load model from the folder containing the model
+    return TabularPredictor.load(os.path.dirname(model_path))
+
+
 async def load_model(
     user_name: str, project_name: str, run_name: str
 ) -> MultiModalPredictor:
     model_path = find_latest_model(
         f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
     )
+    print("model path: ", model_path)
     return load_model_from_path(model_path)
+
+
+async def load_tabular_model(
+    user_name: str, project_name: str, run_name: str
+) -> TabularPredictor:
+    model_path = find_latest_tabular_model(
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+    )
+    print("model path: ", model_path)
+    return load_tabular_model_from_path(model_path)
 
 
 @router.post(
@@ -46,7 +66,7 @@ async def load_model(
     tags=["image_classification"],
     description="Only use in dev and testing, not for production",
 )
-async def predict(
+async def img_predict(
     userEmail: str = Form("test-automl"),
     projectName: str = Form("4-animal"),
     runName: str = Form("ISE"),
@@ -100,3 +120,43 @@ async def predict(
     #     "task_id": task_id,
     #     "send_status": "SUCCESS",
     # }
+
+
+@router.post(
+    "tabular_classification/temp_predict",
+    tags=["tabular_classification"],
+    description="Only use in dev and testing, not for production",
+)
+async def tab_predict(
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("titanic"),
+    runName: str = Form("ISE"),
+    csv_file: UploadFile = File(...),
+):
+    print(userEmail)
+    print(runName)
+    try:
+        df = pandas.read_csv(csv_file.file)
+        start_load = perf_counter()
+        # TODO : Load model with any path
+
+        print("Loading model")
+        model = await load_tabular_model(userEmail, projectName, runName)
+        print("Model loaded")
+
+        print(df.head())
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+        predictions = model.predict(df, as_pandas=True)
+        proba: float = 0.98
+        print(predictions.to_csv())
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "proba": proba,
+            "inference_time": perf_counter() - inference_start,
+            "predictions": predictions.to_csv(),
+        }
+    except Exception as e:
+        print(e)

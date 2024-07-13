@@ -21,26 +21,9 @@ def image_classify_train(self, request: dict):
     return image_classify.train(self.request.id, request)
 
 
-# @shared_task(
-#     bind=True,
-#     name="model_service.image_classify.predict",
-# )
-# def image_classify_predict(self, request: dict):
-#     return image_classify.predict(self.request.id, request)
-
-
 @shared_task(
     bind=True,
     name="model_service.tabular_classify.train",
 )
 def tabular_classify_train(self, request: dict):
     return tabular_classify.train(self.request.id, request)
-
-
-# @shared_task(
-#     bind=True,
-#     name="model_service.tabular_classify.predict",
-# )
-# def tabular_classify_predict(self, request: dict):
-#     return {}
-#     # tabular_classify.tabular_predict(task_id, request)

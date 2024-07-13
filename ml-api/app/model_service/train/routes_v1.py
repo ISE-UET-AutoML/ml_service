@@ -11,7 +11,11 @@ router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
 
 
-@router.post("/tabular_classification", tags=["tabular_classification"])
+@router.post(
+    "/tabular_classification",
+    tags=["tabular_classification"],
+    description="Train tabular classification model, can also be used for tabular regression",
+)
 async def train_tabular_classification(request: TabularTrainRequest):
     # this can also train tabular regression, but might change in the future
     print("Tabular Classification Training request received")

@@ -130,8 +130,17 @@ async def tab_predict(
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = model.predict(df, as_pandas=True)
-        proba = model.predict_proba(df, as_pandas=True)
-        print(predictions.to_csv())
+        try:
+            proba = model.predict_proba(df, as_pandas=True)
+        except Exception as e:
+            return {
+                "status": "success",
+                "message": "Prediction completed",
+                "load_time": load_time,
+                "proba": "Not a classification problem",
+                "inference_time": perf_counter() - inference_start,
+                "predictions": predictions.to_csv(),
+            }
         return {
             "status": "success",
             "message": "Prediction completed",

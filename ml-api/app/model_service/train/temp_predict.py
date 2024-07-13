@@ -102,24 +102,6 @@ async def img_predict(
     finally:
         if os.path.exists(temp_image_path):
             os.remove(temp_image_path)
-    #! unusable, cant jsonify UploadFile
-    # task_id: str = celery_client.send_task(
-    #     "model_service.image_classify.predict",
-    #     kwargs={
-    #         "request": {
-    #             "userEmail": userEmail,
-    #             "projectName": projectName,
-    #             "runName": runName,
-    #             "image": image,
-    #         },
-    #     },
-    #     queue="ml_celery",
-    # )
-
-    # return {
-    #     "task_id": task_id,
-    #     "send_status": "SUCCESS",
-    # }
 
 
 @router.post(
@@ -148,13 +130,13 @@ async def tab_predict(
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = model.predict(df, as_pandas=True)
-        proba: float = 0.98
+        proba = model.predict_proba(df, as_pandas=True)
         print(predictions.to_csv())
         return {
             "status": "success",
             "message": "Prediction completed",
             "load_time": load_time,
-            "proba": proba,
+            "proba": proba.to_csv(),
             "inference_time": perf_counter() - inference_start,
             "predictions": predictions.to_csv(),
         }

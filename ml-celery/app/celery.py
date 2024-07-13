@@ -29,7 +29,7 @@ app = Celery(
 )
 app.autodiscover_tasks(
     [
-        "ml-celery.app.services.model_service",
+        "ml-celery.app.tasks.model_service",
     ]
 )
 app.config_from_object("ml-celery.app.settings.celery_config")

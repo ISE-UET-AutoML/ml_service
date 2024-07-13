@@ -2,7 +2,6 @@ import logging
 import os
 from pathlib import Path
 import asyncio
-from random import shuffle
 import subprocess
 import argparse
 from typing import Optional, Union
@@ -66,6 +65,7 @@ class AutogluonTrainer(object):
         train_data_path: Path,
         val_data_size: float | None,
         val_data_path: Path | None,
+        problem_type: str | None,
         model_path: Path,
     ) -> Union[TabularPredictor, None]:
         try:
@@ -86,7 +86,11 @@ class AutogluonTrainer(object):
 
             print("autogluon trainer: feature metadata successfully")
             predictor = TabularPredictor(
-                label=label, path=str(model_path), eval_metric="acc", **self.model_args
+                label=label,
+                path=str(model_path),
+                problem_type=problem_type,
+                eval_metric="acc",
+                **self.model_args,
             )
             print("autogluon trainer: create predictor successfully")
             # logging.basicConfig(level=logging.DEBUG)

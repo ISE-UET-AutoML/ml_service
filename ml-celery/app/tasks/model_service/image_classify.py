@@ -7,7 +7,7 @@ from tqdm import tqdm
 from mq_main import redis
 from time import perf_counter
 import gdown
-from worker.model_service.image_classify.autogluon_trainer import AutogluonTrainer
+from .image_classify.autogluon_trainer import AutogluonTrainer
 import uuid
 from autogluon.multimodal import MultiModalPredictor
 import joblib

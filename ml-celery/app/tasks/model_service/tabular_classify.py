@@ -4,7 +4,7 @@ from urllib import request
 from celery import shared_task
 import uuid
 import time
-from worker.model_service.tabular.autogluon_trainer import AutogluonTrainer
+from .tabular.autogluon_trainer import AutogluonTrainer
 from mq_main import redis
 from time import perf_counter
 import os
@@ -29,6 +29,7 @@ def train(task_id: str, request: dict):
     start = perf_counter()
     print("Training request received")
     request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
+    request["training_argument"]["ag_fit_args"]["problem_type"] = ""
     try:
         user_dataset_path = (
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"

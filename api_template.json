@@ -8,8 +8,9 @@
                 "training_time": 60,
                 "runName": "ISE",
                 "dataset_url": "1QEhox5PADwRiL8h_cWtpp2vb229rKRXE",
+                "dataset_download_method": "gdrive",
                 "training_argument": {
-                    "data_args": {},
+                    "data_args": { },
                     "ag_model_args": {
                         "pretrained": true,
                         "hyperparameters": {
@@ -28,14 +29,6 @@
             }
         },
         {
-            "api": "image_classify_predict",
-            "sample request": {
-                "userEmail": "test-automl",
-                "projectName": "4-animal",
-                "runName": "ISE"
-            }
-        },
-        {
             "api": "tabular_classify_train",
             "sample request": {
                 "userEmail": "test-automl",
@@ -43,6 +36,7 @@
                 "training_time": 60,
                 "runName": "ISE",
                 "dataset_url": "1s092W0IggF4dWUjYsy1Bj3GVIW1EPAs5",
+                "dataset_download_method": "gdrive",
                 "training_argument": {
                     "ag_fit_args": {
                         "time_limit": 60

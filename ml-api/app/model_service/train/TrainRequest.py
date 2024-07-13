@@ -17,6 +17,12 @@ class TrainRequest(BaseModel):
     dataset_url: str = Field(
         default="1yIkh7Wvu4Lk1o6gVIuyXTb3l9zwNXOCE", title="Dataset URL"
     )
+    dataset_download_method: str = Field(
+        default="gdrive",
+        title="Dataset download method",
+        description="if 'gdrive', dataset url is an id\n",
+    )
+    label_column: str = Field(default="label")
     training_argument: dict = Field(
         default={
             # "data_args": {},
@@ -47,7 +53,6 @@ class Timm_Checkpoint:
 
 
 class ImageClassifyTrainRequest(TrainRequest):
-    label_column: str = Field(default="label")
     training_argument: dict = Field(
         default={
             "data_args": {},

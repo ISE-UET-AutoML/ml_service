@@ -13,6 +13,15 @@ import joblib
 from settings.config import TEMP_DIR
 import gdown
 
+from utils.dataset_utils import (
+    find_latest_model,
+    split_data,
+    create_csv,
+    remove_folders_except,
+    create_folder,
+    download_dataset,
+)
+
 
 def train(task_id: str, request: dict):
     print("Tabular Training request received")
@@ -21,17 +30,16 @@ def train(task_id: str, request: dict):
     print("Training request received")
     request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
     try:
-        # temp folder to store dataset and then delete after training
-        temp_dataset_path = Path(
-            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/data.csv"
+        user_dataset_path = (
+            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
         )
-
-        os.makedirs(temp_dataset_path.parent, exist_ok=True)
-
-        print("make temp folder successfully")
-        dataset_url = f"https://drive.google.com/uc?id={request['dataset_url']}"
-        if os.path.exists(temp_dataset_path) == False:
-            gdown.download(url=dataset_url, output=str(temp_dataset_path), quiet=False)
+        if os.path.exists(user_dataset_path) == False:
+            download_dataset(
+                user_dataset_path,
+                False,
+                request["dataset_url"],
+                request["dataset_download_method"],
+            )
         download_end = perf_counter()
         print("Download dataset successfully")
 
@@ -48,7 +56,7 @@ def train(task_id: str, request: dict):
         #            Path(f"{user_dataset_path}/val.csv"))
         # create_csv(Path(f"{user_dataset_path}/split/test"),
         #            Path(f"{user_dataset_path}/test.csv"))
-        train_path = f"{temp_dataset_path}"
+        train_path = f"{user_dataset_path}/data.csv"
         # test_path=os.path.dirname(__file__)+"/titanic/test.csv"
         # print("Split data successfully")
         # remove_folders_except(Path(user_dataset_path), "split")
@@ -84,17 +92,3 @@ def train(task_id: str, request: dict):
     finally:
         if os.path.exists(temp_dataset_path):
             os.remove(temp_dataset_path)
-
-
-def predict(task_id: str, request: dict):
-    print("Tabular Predict request received")
-    try:
-        model_path = request["model_path"]
-        test_path = request["test_path"]
-        trainer = AutogluonTrainer()
-        model = trainer.load_model(model_path)
-        result = trainer.predict(model, test_path)
-        return result
-    except Exception as e:
-        print(e)
-        return {"error": str(e)}

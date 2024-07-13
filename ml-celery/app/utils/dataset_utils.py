@@ -4,9 +4,18 @@ import splitfolders
 import shutil
 import glob
 from typing import Union
+import gdown
+from zipfile import ZipFile
 
 
-def split_data(input_folder: Path, output_folder, ratio=(0.8, 0.1, 0.1), seed=1337, group_prefix=None, move=False):
+def split_data(
+    input_folder: Path,
+    output_folder,
+    ratio=(0.8, 0.1, 0.1),
+    seed=1337,
+    group_prefix=None,
+    move=False,
+):
     """
     Splits a dataset into training, validation, and testing sets.
 
@@ -22,19 +31,25 @@ def split_data(input_folder: Path, output_folder, ratio=(0.8, 0.1, 0.1), seed=13
     None
     """
     try:
-        splitfolders.ratio(input_folder, output=output_folder, seed=seed,
-                           ratio=ratio, group_prefix=group_prefix, move=move)
+        splitfolders.ratio(
+            input_folder,
+            output=output_folder,
+            seed=seed,
+            ratio=ratio,
+            group_prefix=group_prefix,
+            move=move,
+        )
         print("Data splitting completed successfully.")
     except Exception as e:
         print(f"An error occurred during data splitting: {e}")
 
 
 def create_csv(directory: Path, output_file: Path):
-    with open(output_file, mode='w') as f:
-        f.write('image,label\n')
+    with open(output_file, mode="w") as f:
+        f.write("image,label\n")
         for path, _, files in os.walk(directory):
             for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                if file.lower().endswith((".png", ".jpg", ".jpeg")):
                     label = Path(path).name
                     f.write(f"{os.path.join(path, file)},{label}\n")
 
@@ -76,7 +91,7 @@ def find_latest_model(user_model_path: str) -> Union[str, None]:
     Returns:
         Union[str, None]: _description_
     """
-    pattern = os.path.join(user_model_path, '**', '*.ckpt')
+    pattern = os.path.join(user_model_path, "**", "*.ckpt")
     list_of_files = glob.glob(pattern, recursive=True)
     return max(list_of_files, key=os.path.getctime) if list_of_files else None
 
@@ -87,9 +102,40 @@ def write_image_to_temp_file(image, temp_image_path):
 
 
 def model_size(user_model_path):
-    pattern = os.path.join(user_model_path, '**', '*.ckpt')
+    pattern = os.path.join(user_model_path, "**", "*.ckpt")
     list_of_files = glob.glob(pattern, recursive=True)
     model_size = 0
     for file in list_of_files:
         model_size += os.path.getsize(file)
     return model_size
+
+
+def download_dataset(dataset_dir: str, is_zip: bool, url: str, method: str):
+    """
+    Download dataset
+
+    Args:
+        dataset_dir: local folder where the dataset is going to be stored, should be **/dataset/
+        is_zip: is object a folder? or a simple csv file?
+        url:
+        method: where to download dataset from
+    """
+    os.makedirs(dataset_dir, exist_ok=True)
+    if method == "gdrive":
+        return download_dataset_gdrive(dataset_dir, is_zip, url)
+
+    print("Download dataset successfully")
+
+
+def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
+    dataset_url = f"https://drive.google.com/uc?id={url}"
+    if is_zip:
+        dataset_path = f"{dataset_dir}.zip"
+        gdown.download(url=dataset_url, output=dataset_path, quiet=False)
+        with ZipFile(Path(dataset_path), "r") as zip_ref:
+            zip_ref.extractall(dataset_dir)
+        return dataset_dir
+    else:
+        dataset_path = f"{dataset_dir}/data.csv"
+        gdown.download(url=dataset_url, output=dataset_path, quiet=False)
+        return dataset_path

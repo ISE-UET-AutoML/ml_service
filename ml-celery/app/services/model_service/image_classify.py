@@ -20,6 +20,7 @@ from utils.dataset_utils import (
     create_csv,
     remove_folders_except,
     create_folder,
+    download_dataset,
 )
 import os
 from pathlib import Path
@@ -34,25 +35,18 @@ def train(task_id: str, request: dict):
     start = perf_counter()
     request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
     try:
-        # temp folder to store dataset and then delete after training
-        temp_dataset_path = Path(
-            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/data.zip"
-        )
-        os.makedirs(temp_dataset_path.parent, exist_ok=True)
-
-        dataset_url = f"https://drive.google.com/uc?id={request['dataset_url']}"
-        if os.path.exists(temp_dataset_path) == False:
-            gdown.download(url=dataset_url, output=str(temp_dataset_path), quiet=False)
-        download_end = perf_counter()
-        print("Download dataset successfully")
         user_dataset_path = (
-            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/datasets"
+            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
         )
-        user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
-        with ZipFile(temp_dataset_path, "r") as zip_ref:
-            zip_ref.extractall(user_dataset_path)
 
-        create_folder(Path(user_dataset_path))
+        if os.path.exists(user_dataset_path) == False:
+            download_dataset(
+                user_dataset_path,
+                True,
+                request["dataset_url"],
+                request["dataset_download_method"],
+            )
+        download_end = perf_counter()
 
         if os.path.exists(f"{user_dataset_path}/split") == False:
             split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")

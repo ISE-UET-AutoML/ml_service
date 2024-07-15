@@ -117,24 +117,47 @@ def download_dataset(dataset_dir: str, is_zip: bool, url: str, method: str):
     Args:
         dataset_dir: local folder where the dataset is going to be stored, should be **/dataset/
         is_zip: is object a folder? or a simple csv file?
+        only tabular prediction task and text prediction task will have an data.csv file, other tasks will have multiple files
         url:
         method: where to download dataset from
     """
     os.makedirs(dataset_dir, exist_ok=True)
+    datafile = ""
     if method == "gdrive":
-        return download_dataset_gdrive(dataset_dir, is_zip, url)
+        datafile = download_dataset_gdrive(dataset_dir, is_zip, url)
 
-    print("Download dataset successfully")
+    if is_zip == False:
+        return datafile
+    else:
+        with ZipFile(Path(datafile), "r") as zip_ref:
+            zip_ref.extractall(dataset_dir)
+
+            has_root_dir = True
+            root_dir: str | None = None
+
+            for subfile in zip_ref.namelist():
+                path = subfile.split("/")
+
+                if path[0].__contains__("."):
+                    has_root_dir = False
+                    break
+                if root_dir is None:
+                    root_dir = path[0]
+                elif root_dir != path[0]:
+                    has_root_dir = False
+                    break
+            if has_root_dir and root_dir is not None:
+                return f"{dataset_dir}/{root_dir}"
+            else:
+                return dataset_dir
 
 
 def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
     dataset_url = f"https://drive.google.com/uc?id={url}"
     if is_zip:
-        dataset_path = f"{dataset_dir}.zip"
+        dataset_path = f"{dataset_dir}/data.zip"
         gdown.download(url=dataset_url, output=dataset_path, quiet=False)
-        with ZipFile(Path(dataset_path), "r") as zip_ref:
-            zip_ref.extractall(dataset_dir)
-        return dataset_dir
+        return dataset_path
     else:
         dataset_path = f"{dataset_dir}/data.csv"
         gdown.download(url=dataset_url, output=dataset_path, quiet=False)

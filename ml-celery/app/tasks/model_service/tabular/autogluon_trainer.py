@@ -52,7 +52,7 @@ class AutogluonTrainer(object):
                 ),
             },
         )
-        self.fit_args["presets"] = "best_quality"
+        # self.fit_args["presets"] = "best_quality"
         self.fit_args["hyperparameters"] = get_hyperparameter_config(
             "light" if not self.has_special_types else "multimodal"
         )

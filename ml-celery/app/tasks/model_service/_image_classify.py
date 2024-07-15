@@ -35,6 +35,7 @@ def train(task_id: str, request: dict):
     print("Image Classification Training request received")
     start = perf_counter()
     request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
+    request["training_argument"]["ag_fit_args"]["presets"] = request["presets"]
     try:
 
         user_dataset_path = (

@@ -29,7 +29,7 @@ def train(task_id: str, request: dict):
     start = perf_counter()
     print("Training request received")
     request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
-    request["training_argument"]["ag_fit_args"]["problem_type"] = ""
+    request["training_argument"]["ag_fit_args"]["presets"] = request["presets"]
     try:
         user_dataset_path = (
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
@@ -72,7 +72,7 @@ def train(task_id: str, request: dict):
         target = request["label_column"]
         print("Create trainer successfully")
 
-        model = trainer.train(target, train_path, 0.2, None, user_model_path)
+        model = trainer.train(target, train_path, 0.2, None, None, user_model_path)
 
         if model is None:
             raise ValueError("Error in training model")

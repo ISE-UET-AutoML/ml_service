@@ -42,7 +42,7 @@ def train(task_id: str, request: dict):
         )
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
         if os.path.exists(user_dataset_path) == False:
-            download_dataset(
+            user_dataset_path = download_dataset(
                 user_dataset_path,
                 True,
                 request["dataset_url"],

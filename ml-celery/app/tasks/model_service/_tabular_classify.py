@@ -34,6 +34,7 @@ def train(task_id: str, request: dict):
         user_dataset_path = (
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
         )
+        train_path = f"{user_dataset_path}/data.csv"
         if os.path.exists(user_dataset_path) == False:
             download_dataset(
                 user_dataset_path,
@@ -57,7 +58,6 @@ def train(task_id: str, request: dict):
         #            Path(f"{user_dataset_path}/val.csv"))
         # create_csv(Path(f"{user_dataset_path}/split/test"),
         #            Path(f"{user_dataset_path}/test.csv"))
-        train_path = f"{user_dataset_path}/data.csv"
         # test_path=os.path.dirname(__file__)+"/titanic/test.csv"
         # print("Split data successfully")
         # remove_folders_except(Path(user_dataset_path), "split")

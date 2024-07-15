@@ -1,7 +1,7 @@
 import time
 from celery import shared_task
-from . import image_classify
-from . import tabular_classify
+from . import _image_classify
+from . import _tabular_classify
 
 
 @shared_task(
@@ -18,7 +18,7 @@ def time_test(self, request: dict):
     name="model_service.image_classify.train",
 )
 def image_classify_train(self, request: dict):
-    return image_classify.train(self.request.id, request)
+    return _image_classify.train(self.request.id, request)
 
 
 @shared_task(
@@ -26,4 +26,4 @@ def image_classify_train(self, request: dict):
     name="model_service.tabular_classify.train",
 )
 def tabular_classify_train(self, request: dict):
-    return tabular_classify.train(self.request.id, request)
+    return _tabular_classify.train(self.request.id, request)

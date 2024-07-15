@@ -1,12 +1,19 @@
 {
     "templates": [
         {
+            "preset": [ "best_quality", "high_quality", "good_quality", "medium_quality", "optimized_for_deployment" ],
+            "description": "higher quality = longer training time = better performance = slower inference speed",
+            "description2": "medium_quality should only be used for prototyping",
+            "description3": "optimized_for_deployment is only for tabular tasks "
+        },
+        {
             "api": "image_classify_train",
             "sample request": {
                 "userEmail": "test-automl",
                 "projectName": "4-animal",
                 "training_time": 60,
                 "runName": "ISE",
+                "presets": [ "good_quality" ],
                 "dataset_url": "1QEhox5PADwRiL8h_cWtpp2vb229rKRXE",
                 "dataset_download_method": "gdrive",
                 "training_argument": {
@@ -29,12 +36,28 @@
             }
         },
         {
+            "api": "object_detection_train",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "tiny-motobike",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": [ "good_quality" ],
+                "dataset_url": "https://automl-mm-bench.s3.amazonaws.com/object_detection_dataset/tiny_motorbike_coco.zip",
+                "dataset_download_method": "zip_url",
+                "training_argument": {
+                },
+                "label_column": "label"
+            }
+        },
+        {
             "api": "tabular_classify_train",
             "sample request": {
                 "userEmail": "test-automl",
                 "projectName": "titanic",
                 "training_time": 60,
                 "runName": "ISE",
+                "presets": [ "good_quality" ],
                 "dataset_url": "1s092W0IggF4dWUjYsy1Bj3GVIW1EPAs5",
                 "dataset_download_method": "gdrive",
                 "training_argument": {

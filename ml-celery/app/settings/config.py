@@ -42,3 +42,9 @@ BROKER = "amqp://{user}:{pw}@{hostname}:{port}/{vhost}".format(
     port=RABBITMQ["post"],
     vhost=RABBITMQ["vhost"],
 )
+
+# =========================================================================
+#                          GOOGLE CLOUD INFORMATION
+# =========================================================================
+
+GCP_CREDENTIALS = ""

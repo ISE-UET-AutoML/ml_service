@@ -43,8 +43,8 @@
                 "training_time": 60,
                 "runName": "ISE",
                 "presets": [ "good_quality" ],
-                "dataset_url": "https://automl-mm-bench.s3.amazonaws.com/object_detection_dataset/tiny_motorbike_coco.zip",
-                "dataset_download_method": "zip_url",
+                "dataset_url": "1UkzxTUA-oHrHEikBbRT7aMgnfO5M2SOV",
+                "dataset_download_method": "gdrive",
                 "training_argument": {
                 },
                 "label_column": "label"

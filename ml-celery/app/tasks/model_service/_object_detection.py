@@ -1,4 +1,5 @@
 from email.mime import image
+import logging
 import re
 from zipfile import ZipFile
 from celery import shared_task
@@ -28,69 +29,64 @@ from pathlib import Path
 
 
 def train(task_id: str, request: dict):
-    redis.set(f"status-{task_id}", "RUNNING")
-    temp_dataset_path = ""
     print("task_id:", task_id)
     print("request:", request)
-    print("Image Classification Training request received")
+    print("Object Detection Training request received")
     start = perf_counter()
-    request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
+    # request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
     try:
-
         user_dataset_path = (
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
         )
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
-        if os.path.exists(user_dataset_path) == False:
-            download_dataset(
-                user_dataset_path,
-                True,
-                request["dataset_url"],
-                request["dataset_download_method"],
-            )
-        download_end = perf_counter()
+        # if os.path.exists(user_dataset_path) == False:
+        #     user_dataset_path = download_dataset(
+        #         user_dataset_path,
+        #         True,
+        #         request["dataset_url"],
+        #         request["dataset_download_method"],
+        #    )
 
-        if os.path.exists(f"{user_dataset_path}/split") == False:
-            split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
-            # # TODO : User can choose ratio to split data @DuongNam
-            # # assume user want to split data into 80% train, 10% val, 10% test
-            create_csv(
-                Path(f"{user_dataset_path}/split/train"),
-                Path(f"{user_dataset_path}/train.csv"),
-            )
-            create_csv(
-                Path(f"{user_dataset_path}/split/val"),
-                Path(f"{user_dataset_path}/val.csv"),
-            )
-            create_csv(
-                Path(f"{user_dataset_path}/split/test"),
-                Path(f"{user_dataset_path}/test.csv"),
-            )
-            print("Split data successfully")
-        remove_folders_except(Path(user_dataset_path), "split")
-        print("Remove folders except split successfully")
-        trainer = AutogluonTrainer(request["training_argument"])
-        print("Create trainer successfully")
-        # training job của mình sẽ chạy ở đây
-        model = trainer.train(
-            "label",
-            Path(f"{user_dataset_path}/train.csv"),
-            Path(f"{user_dataset_path}/val.csv"),
-            Path(f"{user_model_path}"),
+        print("downloading dataset")
+        user_dataset_path = download_dataset(
+            user_dataset_path,
+            True,
+            request["dataset_url"],
+            request["dataset_download_method"],
         )
-        print("Training model successfully")
-        if model is None:
-            raise ValueError("Error in training model")
+        download_end = perf_counter()
+        print("Download dataset successfully ", user_dataset_path)
 
-        acc = AutogluonTrainer.evaluate(model, Path(f"{user_dataset_path}/test.csv"))
+        #! temporary, train and val should be split, file name should be changed
+        data_dir = Path(user_dataset_path)
+        train_path = os.path.join(data_dir, "Annotations", "trainval_cocoformat.json")
+        test_path = os.path.join(data_dir, "Annotations", "test_cocoformat.json")
+
+        preset = "medium_quality"
+
+        # training job của mình sẽ chạy ở đây
+        predictor = MultiModalPredictor(
+            problem_type="object_detection",
+            sample_data_path=train_path,
+            path=user_model_path,
+        )
+        logging.basicConfig(level=logging.DEBUG)
+
+        predictor.fit(
+            train_path,
+            time_limit=request["training_time"],
+            presets=preset,
+            save_path=user_model_path,
+        )
+
+        print("Training model successfully")
+
+        metrics = predictor.evaluate(test_path)
         print("Evaluate model successfully")
-        acc = 0.98
 
         end = perf_counter()
-        redis.set(f"status-{task_id}", "SUCCESS")
-
         return {
-            "validation_accuracy": acc,
+            "metrics": metrics,
             "training_evaluation_time": end - start,
             "model_download_time": download_end - start,
             "saved_model_path": user_model_path,

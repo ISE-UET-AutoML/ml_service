@@ -166,3 +166,5 @@ celery-logs/
 redis-logs/
 
 tmp/
+
+yolox*.*

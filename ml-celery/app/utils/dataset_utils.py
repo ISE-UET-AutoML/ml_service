@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
+from turtle import st
 import splitfolders
 import shutil
 import glob
 from typing import Union
 import gdown
 from zipfile import ZipFile
+from autogluon.core.utils.loaders import load_zip
 
 
 def split_data(
@@ -110,7 +112,9 @@ def model_size(user_model_path):
     return model_size
 
 
-def download_dataset(dataset_dir: str, is_zip: bool, url: str, method: str):
+def download_dataset(
+    dataset_dir: str, is_zip: bool, url: str, method: str, format: str | None = None
+):
     """
     Download dataset
 
@@ -120,11 +124,19 @@ def download_dataset(dataset_dir: str, is_zip: bool, url: str, method: str):
         only tabular prediction task and text prediction task will have an data.csv file, other tasks will have multiple files
         url:
         method: where to download dataset from
+        format: for future use
     """
+    #! Data set may come in many format, this function should be changed to handle all cases
+
     os.makedirs(dataset_dir, exist_ok=True)
     datafile = ""
     if method == "gdrive":
         datafile = download_dataset_gdrive(dataset_dir, is_zip, url)
+    # elif method == "zip_url": #! zip_url is not working
+    # datafile = download_dataset_zip_url(dataset_dir, url)
+
+    if datafile == "":
+        raise ValueError("Error in downloading dataset")
 
     if is_zip == False:
         return datafile
@@ -146,6 +158,7 @@ def download_dataset(dataset_dir: str, is_zip: bool, url: str, method: str):
                 elif root_dir != path[0]:
                     has_root_dir = False
                     break
+            print(has_root_dir, root_dir)
             if has_root_dir and root_dir is not None:
                 return f"{dataset_dir}/{root_dir}"
             else:
@@ -162,3 +175,18 @@ def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
         dataset_path = f"{dataset_dir}/data.csv"
         gdown.download(url=dataset_url, output=dataset_path, quiet=False)
         return dataset_path
+
+
+import requests
+
+
+def download_dataset_zip_url(dataset_dir: str, url: str):
+    r = requests.get(url)
+
+    if os.path.exists(f"{dataset_dir}/data.zip"):
+        return f"{dataset_dir}/data.zip"
+
+    with open(f"{dataset_dir}/data.zip", "wb") as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
+    return f"{dataset_dir}/data.zip"

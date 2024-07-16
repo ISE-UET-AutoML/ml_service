@@ -70,3 +70,7 @@ class ImageClassifyTrainRequest(TrainRequest):
         },
         title="Training arguments.",
     )
+
+
+class ObjectDetectionTrainRequest(TrainRequest):
+    projectName: str = Field(default="mini-motobike", title="Project name")

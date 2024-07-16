@@ -5,7 +5,11 @@ import redis
 from settings.config import celery_client, redis_client
 from .temp_predict import router as temp_predict_router
 from helpers import time as time_helper
-from .TrainRequest import ImageClassifyTrainRequest, TabularTrainRequest
+from .TrainRequest import (
+    ImageClassifyTrainRequest,
+    ObjectDetectionTrainRequest,
+    TabularTrainRequest,
+)
 
 router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
@@ -39,6 +43,24 @@ async def train_image_classification(request: ImageClassifyTrainRequest):
 
     task_id = celery_client.send_task(
         "model_service.image_classify.train",
+        kwargs={
+            "request": request.dict(),
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+
+@router.post("/object_detection", tags=["object_detection"])
+async def train_object_detection(request: ObjectDetectionTrainRequest):
+    print("Object Detection Training request received")
+
+    task_id = celery_client.send_task(
+        "model_service.object_detection.train",
         kwargs={
             "request": request.dict(),
         },

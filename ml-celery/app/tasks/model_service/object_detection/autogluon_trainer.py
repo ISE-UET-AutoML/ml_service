@@ -182,7 +182,7 @@ class AutogluonTrainer(object):
             logging.basicConfig(level=logging.DEBUG)
 
             predictor.fit(
-                train_data=pd.read_csv(train_data_path),
+                train_data=str(train_data_path),
                 tuning_data=str(val_data_path),
                 save_path=str(model_path),
                 **self.fit_args,

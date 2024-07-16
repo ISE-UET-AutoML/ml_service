@@ -2,6 +2,7 @@ import time
 from celery import shared_task
 from . import _image_classify
 from . import _tabular_classify
+from . import _object_detection
 
 
 @shared_task(
@@ -27,3 +28,11 @@ def image_classify_train(self, request: dict):
 )
 def tabular_classify_train(self, request: dict):
     return _tabular_classify.train(self.request.id, request)
+
+
+@shared_task(
+    bind=True,
+    name="model_service.object_detection.train",
+)
+def object_detection_train(self, request: dict):
+    return _object_detection.train(self.request.id, request)

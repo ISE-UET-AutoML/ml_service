@@ -42,13 +42,13 @@ def train(task_id: str, request: dict):
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
         )
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
-        if os.path.exists(user_dataset_path) == False:
-            user_dataset_path = download_dataset(
-                user_dataset_path,
-                True,
-                request["dataset_url"],
-                request["dataset_download_method"],
-            )
+        # if os.path.exists(user_dataset_path) == False:
+        user_dataset_path = download_dataset(
+            user_dataset_path,
+            True,
+            request["dataset_url"],
+            request["dataset_download_method"],
+        )
         download_end = perf_counter()
 
         if os.path.exists(f"{user_dataset_path}/split") == False:
@@ -100,10 +100,10 @@ def train(task_id: str, request: dict):
     except Exception as e:
         print(e)
         # raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
-    finally:
-        # if os.path.exists(temp_dataset_path):
-        #    os.remove(temp_dataset_path)
-        return {}
+    # finally:
+    # if os.path.exists(temp_dataset_path):
+    #    os.remove(temp_dataset_path)
+    # return {}
 
 
 memory = joblib.Memory(

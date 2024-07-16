@@ -46,15 +46,21 @@ class Storage(metaclass=SingletonMeta):
                 start = time.time()
                 print("init service account")
                 self.storage_client = Client.from_service_account_json(
-                    config.GCP_CREDENTIALS)
+                    config.GCP_CREDENTIALS
+                )
                 # self.storage_client = Client.create_anonymous_client()
-                print("Storage client initialized in " +
-                      str(time.time() - start) + " seconds")
+                print(
+                    "Storage client initialized in "
+                    + str(time.time() - start)
+                    + " seconds"
+                )
                 self._initialized = True
 
         except Exception as error:
             print("Error when initializing storage client: ", error)
-            exit(1)
+            # exit(1)
+        finally:
+            pass
 
     def create_bucket(self, bucket_name: str) -> Bucket:
         """Create a new bucket in specific location with storage class"""
@@ -113,8 +119,9 @@ class Storage(metaclass=SingletonMeta):
             print("Error in getting bucket: ", error)
             return None
 
-    def upload_blob(self, bucket_name: str, source_file_name: Path,
-                    destination_blob_name: Path) -> bool:
+    def upload_blob(
+        self, bucket_name: str, source_file_name: Path, destination_blob_name: Path
+    ) -> bool:
         """Uploads a single file to the bucket.
         Vi du upload_blob("user1_bucket", "available_checkpoint/flowers/file_1", "flowers/des_1")
         """
@@ -122,26 +129,33 @@ class Storage(metaclass=SingletonMeta):
             bucket = self.storage_client.bucket(bucket_name)
             blob = bucket.blob(destination_blob_name)
             blob.upload_from_filename(source_file_name)
-            print("File {} uploaded to {}.".format(
-                source_file_name, destination_blob_name))
+            print(
+                "File {} uploaded to {}.".format(
+                    source_file_name, destination_blob_name
+                )
+            )
             return True
         except Exception as error:
             print("Error in uploading blob: ", error)
             return False
 
-    async def upload_blob_async(self, bucket_name: str, source_file_name: Path,
-                                destination_blob_name: Path) -> bool:
+    async def upload_blob_async(
+        self, bucket_name: str, source_file_name: Path, destination_blob_name: Path
+    ) -> bool:
         """Uploads a single file to the bucket.
         Vi du upload_blob("user1_bucket", "available_checkpoint/flowers/file_1", "flowers/des_1")
         """
         try:
-            return await asyncio.to_thread(self.upload_blob, bucket_name, source_file_name, destination_blob_name)
+            return await asyncio.to_thread(
+                self.upload_blob, bucket_name, source_file_name, destination_blob_name
+            )
         except Exception as error:
             logging.error(f"Async upload blob error: {error}")
             raise
 
-    def upload_blob_from_string(self, bucket_name: str, source_string: str,
-                                destination_blob_name: Path) -> bool:
+    def upload_blob_from_string(
+        self, bucket_name: str, source_string: str, destination_blob_name: Path
+    ) -> bool:
         try:
             bucket = self.storage_client.bucket(bucket_name)
             blob = bucket.blob(destination_blob_name)
@@ -151,11 +165,16 @@ class Storage(metaclass=SingletonMeta):
             print("Error in uploading blob: ", error)
         return False
 
-    async def upload_blob_from_string_async(self, bucket_name: str, source_string: str,
-                                            destination_blob_name: Path) -> bool:
+    async def upload_blob_from_string_async(
+        self, bucket_name: str, source_string: str, destination_blob_name: Path
+    ) -> bool:
         try:
-            return await asyncio.to_thread(self.upload_blob_from_string, bucket_name, source_string,
-                                           destination_blob_name)
+            return await asyncio.to_thread(
+                self.upload_blob_from_string,
+                bucket_name,
+                source_string,
+                destination_blob_name,
+            )
         except Exception as error:
             logging.error(f"Async upload blob from string error: {error}")
             raise
@@ -175,62 +194,97 @@ class Storage(metaclass=SingletonMeta):
             print(f"Error in creating folder: {type(error).__name__}: {error}")
         return False
 
-    def upload_from_folder(self, bucket_name, source_directory: Path, destination_prefix: str,
-                           max_workers: int = 10) -> list | None:
+    def upload_from_folder(
+        self,
+        bucket_name,
+        source_directory: Path,
+        destination_prefix: str,
+        max_workers: int = 10,
+    ) -> list | None:
         try:
             bucket = self.storage_client.bucket(bucket_name)
             directory_as_path_obj = Path(source_directory)
             paths = directory_as_path_obj.rglob("*")
             file_paths = [path for path in paths if path.is_file()]
-            relative_paths = [path.relative_to(
-                source_directory) for path in file_paths]
+            relative_paths = [path.relative_to(source_directory) for path in file_paths]
             string_paths = [str(path) for path in relative_paths]
             print(f"Uploading {len(string_paths)}")
             results = transfer_manager.upload_many_from_filenames(
-                bucket, string_paths, source_directory=str(source_directory), blob_name_prefix=destination_prefix if destination_prefix.endswith('/') else destination_prefix + "/", max_workers=max_workers,
-                additional_blob_attributes={
-                    "cache_control": "public"
-                }
+                bucket,
+                string_paths,
+                source_directory=str(source_directory),
+                blob_name_prefix=(
+                    destination_prefix
+                    if destination_prefix.endswith("/")
+                    else destination_prefix + "/"
+                ),
+                max_workers=max_workers,
+                additional_blob_attributes={"cache_control": "public"},
             )
             return results
         except Exception as error:
             print("Error in uploading from folder: ", error)
             return None
 
-    async def upload_from_folder_async(self, bucket_name, source_directory: Path, destination_prefix: str,
-                                       max_workers: int = 10) -> list | None:
+    async def upload_from_folder_async(
+        self,
+        bucket_name,
+        source_directory: Path,
+        destination_prefix: str,
+        max_workers: int = 10,
+    ) -> list | None:
         try:
             return await asyncio.to_thread(
-                self.upload_from_folder, bucket_name, source_directory, destination_prefix, max_workers
+                self.upload_from_folder,
+                bucket_name,
+                source_directory,
+                destination_prefix,
+                max_workers,
             )
         except Exception as error:
             logging.error(f"Async upload from folder error: {error}")
             raise
 
-    def download_blob(self, bucket_name: str, source_blob_name: Path,
-                      destination_file_name: Path) -> bool:
+    def download_blob(
+        self, bucket_name: str, source_blob_name: Path, destination_file_name: Path
+    ) -> bool:
         """Downloads a blob from the bucket."""
         try:
             bucket = self.storage_client.bucket(bucket_name)
             blob = bucket.blob(source_blob_name)
             blob.download_to_filename(destination_file_name)
-            print("Blob {} downloaded to {}.".format(
-                source_blob_name, destination_file_name))
+            print(
+                "Blob {} downloaded to {}.".format(
+                    source_blob_name, destination_file_name
+                )
+            )
             return True
         except Exception as error:
             print("Error in downloading blob: ", error)
             return False
 
-    async def download_blob_async(self, bucket_name: Union[str, str], source_blob_name: Union[Path, str],
-                                  destination_file_name: Path) -> bool:
+    async def download_blob_async(
+        self,
+        bucket_name: Union[str, str],
+        source_blob_name: Union[Path, str],
+        destination_file_name: Path,
+    ) -> bool:
         """Downloads a blob from the bucket."""
         try:
-            return await asyncio.to_thread(self.download_blob, bucket_name, source_blob_name, destination_file_name)
+            return await asyncio.to_thread(
+                self.download_blob, bucket_name, source_blob_name, destination_file_name
+            )
         except Exception as error:
             logging.error(f"Async download blob error: {error}")
             raise
 
-    def download_folder(self, bucket_name, source_directory="flower/", destination_directory="", workers=30):
+    def download_folder(
+        self,
+        bucket_name,
+        source_directory="flower/",
+        destination_directory="",
+        workers=30,
+    ):
         try:
             print("dowload folder source_directory", source_directory)
             bucket = self.storage_client.bucket(bucket_name)
@@ -240,8 +294,10 @@ class Storage(metaclass=SingletonMeta):
             blob_names = [blob.name for blob in blobs]
             print(f"Downloading {len(blob_names)}")
             results = transfer_manager.download_many_to_path(
-                bucket, blob_names, destination_directory=destination_directory, max_workers=workers,
-
+                bucket,
+                blob_names,
+                destination_directory=destination_directory,
+                max_workers=workers,
             )
             return results
         except Exception as error:
@@ -249,11 +305,20 @@ class Storage(metaclass=SingletonMeta):
             return None
 
     # asyncio trick to wrap around the sync function
-    async def download_folder_async(self, bucket_name, source_directory="flower/", destination_directory="",
-                                    workers=30):
+    async def download_folder_async(
+        self,
+        bucket_name,
+        source_directory="flower/",
+        destination_directory="",
+        workers=30,
+    ):
         try:
             return await asyncio.to_thread(
-                self.download_folder, bucket_name, source_directory, destination_directory, workers
+                self.download_folder,
+                bucket_name,
+                source_directory,
+                destination_directory,
+                workers,
             )
         except Exception as error:
             logging.error(f"Async download error: {error}")
@@ -263,9 +328,9 @@ class Storage(metaclass=SingletonMeta):
         """Lists all the blobs in the bucket. prefix will be append at the end of the bucket name -> folder"""
         try:
             bucket = self.storage_client.bucket(bucket_name)
-            blobs = bucket.list_blobs(prefix=prefix, additional_blob_attributes={
-                "cache_control": "public"
-            })
+            blobs = bucket.list_blobs(
+                prefix=prefix, additional_blob_attributes={"cache_control": "public"}
+            )
             return [blob for blob in blobs]
         except Exception as error:
             print("Error in listing blobs: ", error)

@@ -45,7 +45,7 @@ def train(task_id: str, request: dict):
         download_end = perf_counter()
         print("Download dataset successfully")
 
-        user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
+        user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
 
         # split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
 

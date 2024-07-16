@@ -26,6 +26,7 @@ from utils.dataset_utils import (
 )
 import os
 from pathlib import Path
+import shutil
 
 
 def train(task_id: str, request: dict):
@@ -38,7 +39,7 @@ def train(task_id: str, request: dict):
         user_dataset_path = (
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
         )
-        user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{uuid.uuid4()}"
+        user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
         # if os.path.exists(user_dataset_path) == False:
         #     user_dataset_path = download_dataset(
         #         user_dataset_path,
@@ -46,6 +47,8 @@ def train(task_id: str, request: dict):
         #         request["dataset_url"],
         #         request["dataset_download_method"],
         #    )
+        if os.path.exists(user_model_path):
+            shutil.rmtree(user_model_path)
 
         print("downloading dataset")
         user_dataset_path = download_dataset(
@@ -62,7 +65,7 @@ def train(task_id: str, request: dict):
         train_path = os.path.join(data_dir, "Annotations", "trainval_cocoformat.json")
         test_path = os.path.join(data_dir, "Annotations", "test_cocoformat.json")
 
-        preset = "medium_quality"
+        presets = request["presets"]
 
         # training job của mình sẽ chạy ở đây
         predictor = MultiModalPredictor(
@@ -77,7 +80,7 @@ def train(task_id: str, request: dict):
         predictor.fit(
             train_path,
             time_limit=request["training_time"],
-            presets=preset,
+            presets=presets,
             save_path=user_model_path,
         )
 

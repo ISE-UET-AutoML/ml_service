@@ -72,6 +72,8 @@ def train(task_id: str, request: dict):
         )
         logging.basicConfig(level=logging.DEBUG)
 
+        print("created predictor")
+
         predictor.fit(
             train_path,
             time_limit=request["training_time"],
@@ -79,9 +81,12 @@ def train(task_id: str, request: dict):
             save_path=user_model_path,
         )
 
+        print(predictor.eval_metric)
+
         print("Training model successfully")
 
         metrics = predictor.evaluate(test_path)
+        # print(metrics)
         print("Evaluate model successfully")
 
         end = perf_counter()
@@ -95,10 +100,9 @@ def train(task_id: str, request: dict):
     except Exception as e:
         print(e)
         # raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
-    finally:
-        # if os.path.exists(temp_dataset_path):
-        #    os.remove(temp_dataset_path)
-        return {}
+    # finally:
+    # if os.path.exists(temp_dataset_path):
+    #    os.remove(temp_dataset_path)
 
 
 memory = joblib.Memory(

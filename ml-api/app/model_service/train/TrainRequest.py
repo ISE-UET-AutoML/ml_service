@@ -14,7 +14,7 @@ class TrainRequest(BaseModel):
     projectName: str = Field(default="titanic", title="Project name")
     training_time: int = Field(default=60, title="Training Time")
     runName: str = Field(default="ISE", title="Run name")
-    presets: list[str] = Field(default=["good_quality"], title="Presets")
+    presets: str = Field(default="good_quality", title="Presets")
     dataset_url: str = Field(
         default="1yIkh7Wvu4Lk1o6gVIuyXTb3l9zwNXOCE", title="Dataset URL"
     )
@@ -37,6 +37,7 @@ class TrainRequest(BaseModel):
 
 
 class TabularTrainRequest(TrainRequest):
+    presets: str | list[str] = Field(default="good_quality", title="Presets")
     label_column: str = Field(
         default="Survived", description="Survived for titanic dataset"
     )

@@ -169,5 +169,7 @@ tmp/
 
 yolox*.*
 AutogluonModels/
+service-account.json
+
 
 ml-api/testing/

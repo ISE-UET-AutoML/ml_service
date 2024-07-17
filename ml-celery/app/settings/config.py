@@ -47,4 +47,5 @@ BROKER = "amqp://{user}:{pw}@{hostname}:{port}/{vhost}".format(
 #                          GOOGLE CLOUD INFORMATION
 # =========================================================================
 
-GCP_CREDENTIALS = ""
+GCLOUD = cfg["gcloud"]
+GCP_CREDENTIALS = GCLOUD["GCP_CREDENTIALS"]

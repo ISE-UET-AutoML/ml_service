@@ -169,3 +169,5 @@ tmp/
 
 yolox*.*
 AutogluonModels/
+
+ml-api/testing/

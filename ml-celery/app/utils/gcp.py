@@ -206,7 +206,8 @@ class Storage(metaclass=SingletonMeta):
             directory_as_path_obj = Path(source_directory)
             paths = directory_as_path_obj.rglob("*")
             file_paths = [path for path in paths if path.is_file()]
-            relative_paths = [path.relative_to(source_directory) for path in file_paths]
+            relative_paths = [path.relative_to(
+                source_directory) for path in file_paths]
             string_paths = [str(path) for path in relative_paths]
             print(f"Uploading {len(string_paths)}")
             results = transfer_manager.upload_many_from_filenames(
@@ -286,7 +287,7 @@ class Storage(metaclass=SingletonMeta):
         workers=30,
     ):
         try:
-            print("dowload folder source_directory", source_directory)
+            print("download folder source_directory", source_directory)
             bucket = self.storage_client.bucket(bucket_name)
             blobs = bucket.list_blobs(prefix=source_directory)
             blobs = [blob for blob in blobs]
@@ -329,7 +330,8 @@ class Storage(metaclass=SingletonMeta):
         try:
             bucket = self.storage_client.bucket(bucket_name)
             blobs = bucket.list_blobs(
-                prefix=prefix, additional_blob_attributes={"cache_control": "public"}
+                prefix=prefix, additional_blob_attributes={
+                    "cache_control": "public"}
             )
             return [blob for blob in blobs]
         except Exception as error:

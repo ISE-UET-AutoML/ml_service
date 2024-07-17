@@ -18,6 +18,8 @@ class TrainRequest(BaseModel):
     dataset_url: str = Field(
         default="1yIkh7Wvu4Lk1o6gVIuyXTb3l9zwNXOCE", title="Dataset URL"
     )
+    gcloud_dataset_bucketname: str = Field(title="gcloud dataset bucketname")
+    gcloud_dataset_directory: str = Field(title="gcloud dataset directory")
     dataset_download_method: str = Field(
         default="gdrive",
         title="Dataset download method",

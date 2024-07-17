@@ -87,13 +87,25 @@ async def img_predict(
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = model.predict(temp_image_path, realtime=True, save_results=True)
-        proba: float = 0.98
+        try:
+            proba: pandas.DataFrame = model.predict_proba(
+                temp_image_path, as_pandas=True, as_multiclass=True
+            )
+        except Exception as e:
+            return {
+                "status": "success",
+                "message": "Prediction completed",
+                "load_time": load_time,
+                "proba": "Not a classification problem",
+                "inference_time": perf_counter() - inference_start,
+                "predictions": predictions.to_csv(),
+            }
 
         return {
             "status": "success",
             "message": "Prediction completed",
             "load_time": load_time,
-            "proba": proba,
+            "proba": proba.to_csv(),
             "inference_time": perf_counter() - inference_start,
             "predictions": str(predictions),
         }
@@ -131,7 +143,9 @@ async def tab_predict(
         inference_start = perf_counter()
         predictions = model.predict(df, as_pandas=True)
         try:
-            proba = model.predict_proba(df, as_pandas=True)
+            proba: pandas.DataFrame = model.predict_proba(
+                df, as_pandas=True, as_multiclass=True
+            )
         except Exception as e:
             return {
                 "status": "success",
@@ -151,3 +165,47 @@ async def tab_predict(
         }
     except Exception as e:
         print(e)
+
+
+@router.post(
+    "/object_detection/temp_predict",
+    tags=["object_detection"],
+    description="Only use in dev and testing, not for production",
+)
+async def obj_predict(
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("tiny-motobike"),
+    runName: str = Form("ISE"),
+    image: UploadFile = File(...),
+):
+    print(userEmail)
+    print("Run Name:", runName)
+    try:
+        # write the image to a temporary file
+        temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
+        os.makedirs(Path(temp_image_path).parent, exist_ok=True)
+        with open(temp_image_path, "wb") as buffer:
+            buffer.write(await image.read())
+
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+        predictions: pandas.DataFrame = model.predict(temp_image_path, realtime=True)
+
+        print(predictions)
+
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "proba": "Not a classification problem",
+            "inference_time": perf_counter() - inference_start,
+            "predictions": predictions.to_csv(),
+        }
+    except Exception as e:
+        print(e)
+    finally:
+        if os.path.exists(temp_image_path):
+            os.remove(temp_image_path)

@@ -16,6 +16,8 @@
                 "runName": "ISE",
                 "presets": "medium_quality",
                 "dataset_url": "1QEhox5PADwRiL8h_cWtpp2vb229rKRXE",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
                 "dataset_download_method": "gdrive",
                 "training_argument": {
                     "data_args": { },
@@ -41,10 +43,12 @@
             "sample request": {
                 "userEmail": "test-automl",
                 "projectName": "tiny-motobike",
-                "training_time": 60,
+                "training_time": 120,
                 "runName": "ISE",
                 "presets": "medium_quality",
                 "dataset_url": "1UkzxTUA-oHrHEikBbRT7aMgnfO5M2SOV",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
                 "dataset_download_method": "gdrive",
                 "training_argument": {
                 },
@@ -60,6 +64,8 @@
                 "runName": "ISE",
                 "presets": "good_quality",
                 "dataset_url": "1s092W0IggF4dWUjYsy1Bj3GVIW1EPAs5",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
                 "dataset_download_method": "gdrive",
                 "training_argument": {
                     "ag_fit_args": {

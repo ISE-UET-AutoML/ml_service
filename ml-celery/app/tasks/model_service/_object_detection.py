@@ -54,7 +54,7 @@ def train(task_id: str, request: dict):
         user_dataset_path = download_dataset(
             user_dataset_path,
             True,
-            request["dataset_url"],
+            request,
             request["dataset_download_method"],
         )
         download_end = perf_counter()

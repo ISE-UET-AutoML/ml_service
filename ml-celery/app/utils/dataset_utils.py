@@ -113,7 +113,11 @@ def model_size(user_model_path):
 
 
 def download_dataset(
-    dataset_dir: str, is_zip: bool, url: str, method: str, format: str | None = None
+    dataset_dir: str,
+    is_zip: bool,
+    request: dict,
+    method: str,
+    format: str | None = None,
 ):
     """
     Download dataset
@@ -131,7 +135,7 @@ def download_dataset(
     os.makedirs(dataset_dir, exist_ok=True)
     datafile = ""
     if method == "gdrive":
-        datafile = download_dataset_gdrive(dataset_dir, is_zip, url)
+        datafile = download_dataset_gdrive(dataset_dir, is_zip, request["dataset_url"])
     # elif method == "zip_url": #! zip_url is not working
     # datafile = download_dataset_zip_url(dataset_dir, url)
 

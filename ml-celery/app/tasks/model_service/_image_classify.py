@@ -44,14 +44,14 @@ def train(task_id: str, request: dict):
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
 
         # TODO: download dataset in this function
-        user_dataset_path = download_dataset(
-            user_dataset_path, True, request, request["dataset_download_method"]
-        )
+        # user_dataset_path = download_dataset(
+        #     user_dataset_path, True, request, request["dataset_download_method"]
+        # )
         if request["dataset_download_method"] == "gdrive":
             user_dataset_path = download_dataset(
                 user_dataset_path,
                 True,
-                request["dataset_url"],
+                request,
                 request["dataset_download_method"],
             )
         elif request["dataset_download_method"] == "gcloud":

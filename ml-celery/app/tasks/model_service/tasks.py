@@ -3,6 +3,7 @@ from celery import shared_task
 from . import _image_classify
 from . import _tabular_classify
 from . import _object_detection
+from . import _generic_mm_prediction
 
 
 @shared_task(
@@ -36,3 +37,11 @@ def tabular_classify_train(self, request: dict):
 )
 def object_detection_train(self, request: dict):
     return _object_detection.train(self.request.id, request)
+
+
+@shared_task(
+    bind=True,
+    name="model_service.generic_mm_prediction.train",
+)
+def generic_mm_prediction_train(self, request: dict):
+    return _generic_mm_prediction.train(self.request.id, request)

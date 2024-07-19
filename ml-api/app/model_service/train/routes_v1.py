@@ -9,6 +9,7 @@ from .TrainRequest import (
     ImageClassifyTrainRequest,
     ObjectDetectionTrainRequest,
     TabularTrainRequest,
+    TrainRequest,
 )
 
 router = APIRouter()
@@ -18,7 +19,7 @@ router.include_router(temp_predict_router, prefix="")
 @router.post(
     "/tabular_classification",
     tags=["tabular_classification"],
-    description="Train tabular classification model, can also be used for tabular regression",
+    description="Train tabular classification model, can also be used for tabular regression\nfaster and better performance multimodal",
 )
 async def train_tabular_classification(request: TabularTrainRequest):
     # this can also train tabular regression, but might change in the future
@@ -61,6 +62,27 @@ async def train_object_detection(request: ObjectDetectionTrainRequest):
 
     task_id = celery_client.send_task(
         "model_service.object_detection.train",
+        kwargs={
+            "request": request.dict(),
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+
+@router.post(
+    "/generic_multimodal_prediction",
+    tags=["tabular+image+text classification/regressiion"],
+)
+async def train_generic_mm_prediction(request: TrainRequest):
+    print("Generic Multimodal Prediction Training request received")
+
+    task_id = celery_client.send_task(
+        "model_service.generic_mm_prediction.train",
         kwargs={
             "request": request.dict(),
         },

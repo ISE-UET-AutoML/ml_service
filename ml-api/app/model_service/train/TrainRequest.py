@@ -85,3 +85,12 @@ class ImageSegmentationTrainRequest(TrainRequest):
         title="Image column",
         description="List of image columns, used to expand image path",
     )
+
+
+class GenericMultiModalTrainRequest(TrainRequest):
+    problem_type: str | None = Field(default=None, title="Problem type")
+    image_cols: list[str] = Field(
+        default=["image"],
+        title="Image column",
+        description="List of image columns, used to expand image path",
+    )

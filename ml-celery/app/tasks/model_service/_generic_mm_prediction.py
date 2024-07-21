@@ -100,7 +100,7 @@ def train(task_id: str, request: dict):
             save_path=user_model_path,
         )
 
-        metrics = predictor.evaluate(test_data)
+        metrics = predictor.evaluate(test_data, metrics=request["metrics"])
         # print("Training model successfully")
 
         end = perf_counter()

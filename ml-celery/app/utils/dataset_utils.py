@@ -173,6 +173,8 @@ def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
     dataset_url = f"https://drive.google.com/uc?id={url}"
     if is_zip:
         dataset_path = f"{dataset_dir}/data.zip"
+        if os.path.exists(dataset_path):
+            return dataset_path
         gdown.download(url=dataset_url, output=dataset_path, quiet=False)
         return dataset_path
     else:

@@ -94,3 +94,12 @@ class GenericMultiModalTrainRequest(TrainRequest):
         title="Image column",
         description="List of image columns, used to expand image path",
     )
+    metrics: str | list[str] | None = Field(default=None, title="Metrics")
+
+
+class NamedEntityRecognitionTrainRequest(TrainRequest):
+    image_cols: list[str] = Field(
+        default=[],
+        title="Image column",
+        description="List of image columns, used to expand image path",
+    )

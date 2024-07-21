@@ -5,6 +5,7 @@ from . import _tabular_classify
 from . import _object_detection
 from . import _generic_mm_prediction
 from . import _image_segmentation
+from . import _named_entity_recognition
 
 
 @shared_task(
@@ -54,3 +55,11 @@ def generic_mm_prediction_train(self, request: dict):
 )
 def image_segmentation_train(self, request: dict):
     return _image_segmentation.train(self.request.id, request)
+
+
+@shared_task(
+    bind=True,
+    name="model_service.named_entity_recognition.train",
+)
+def named_entity_recognition_train(self, request: dict):
+    return _named_entity_recognition.train(self.request.id, request)

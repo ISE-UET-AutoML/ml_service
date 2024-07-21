@@ -6,8 +6,10 @@ from settings.config import celery_client, redis_client
 from .temp_predict import router as temp_predict_router
 from helpers import time as time_helper
 from .TrainRequest import (
+    GenericMultiModalTrainRequest,
     ImageClassifyTrainRequest,
     ImageSegmentationTrainRequest,
+    NamedEntityRecognitionTrainRequest,
     ObjectDetectionTrainRequest,
     TabularTrainRequest,
     TrainRequest,
@@ -79,7 +81,7 @@ async def train_object_detection(request: ObjectDetectionTrainRequest):
     "/generic_multimodal_prediction",
     tags=["tabular+image+text classification/regressiion"],
 )
-async def train_generic_mm_prediction(request: TrainRequest):
+async def train_generic_mm_prediction(request: GenericMultiModalTrainRequest):
     print("Generic Multimodal Prediction Training request received")
 
     task_id = celery_client.send_task(
@@ -105,6 +107,27 @@ async def train_image_segmentation(request: ImageSegmentationTrainRequest):
 
     task_id = celery_client.send_task(
         "model_service.image_segmentation.train",
+        kwargs={
+            "request": request.dict(),
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+
+@router.post(
+    "/named_entity_recognition",
+    tags=["named_entity_recognition"],
+)
+async def train_named_entity_recognition(request: NamedEntityRecognitionTrainRequest):
+    print("Named Entity Recognition Training request received")
+
+    task_id = celery_client.send_task(
+        "model_service.named_entity_recognition.train",
         kwargs={
             "request": request.dict(),
         },

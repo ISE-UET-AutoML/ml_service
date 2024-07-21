@@ -256,3 +256,52 @@ async def img_seg_predict(
     finally:
         if os.path.exists(temp_image_path):
             os.remove(temp_image_path)
+
+
+@router.post(
+    "/text_classification/temp_predict",
+    tags=["text_classification"],
+    description="Only use in dev and testing, not for production",
+)
+async def text_predict(
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("text-classify"),
+    runName: str = Form("ISE"),
+    text_col: str = Form(
+        "sentence", description="name of the text column in train.csv file"
+    ),
+    text: str = Form(...),
+):
+    print(userEmail)
+    print("Run Name:", runName)
+    try:
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+        predictions = model.predict({text_col: [text]})
+        np.set_printoptions(threshold=np.inf)
+
+        try:
+            proba: pandas.DataFrame = model.predict_proba({text_col: [text]})
+        except Exception as e:
+            return {
+                "status": "success",
+                "message": "Prediction completed",
+                "load_time": load_time,
+                "proba": "Not a classification problem",
+                "inference_time": perf_counter() - inference_start,
+                "predictions": str(predictions),
+            }
+
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "proba": str(proba),
+            "inference_time": perf_counter() - inference_start,
+            "predictions": str(predictions),
+        }
+    except Exception as e:
+        print(e)

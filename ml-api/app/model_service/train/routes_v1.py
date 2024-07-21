@@ -7,6 +7,7 @@ from .temp_predict import router as temp_predict_router
 from helpers import time as time_helper
 from .TrainRequest import (
     ImageClassifyTrainRequest,
+    ImageSegmentationTrainRequest,
     ObjectDetectionTrainRequest,
     TabularTrainRequest,
     TrainRequest,
@@ -83,6 +84,27 @@ async def train_generic_mm_prediction(request: TrainRequest):
 
     task_id = celery_client.send_task(
         "model_service.generic_mm_prediction.train",
+        kwargs={
+            "request": request.dict(),
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+
+@router.post(
+    "/image_segmentation",
+    tags=["image_segmentation"],
+)
+async def train_image_segmentation(request: ImageSegmentationTrainRequest):
+    print("Image Segmentation Training request received")
+
+    task_id = celery_client.send_task(
+        "model_service.image_segmentation.train",
         kwargs={
             "request": request.dict(),
         },

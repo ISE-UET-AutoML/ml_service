@@ -4,6 +4,7 @@ from . import _image_classify
 from . import _tabular_classify
 from . import _object_detection
 from . import _generic_mm_prediction
+from . import _image_segmentation
 
 
 @shared_task(
@@ -45,3 +46,11 @@ def object_detection_train(self, request: dict):
 )
 def generic_mm_prediction_train(self, request: dict):
     return _generic_mm_prediction.train(self.request.id, request)
+
+
+@shared_task(
+    bind=True,
+    name="model_service.image_segmentation.train",
+)
+def image_segmentation_train(self, request: dict):
+    return _image_segmentation.train(self.request.id, request)

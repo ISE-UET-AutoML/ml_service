@@ -11,6 +11,7 @@ from autogluon.tabular import TabularPredictor
 import joblib
 from settings.config import TEMP_DIR
 
+import numpy as np
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -203,6 +204,52 @@ async def obj_predict(
             "proba": "Not a classification problem",
             "inference_time": perf_counter() - inference_start,
             "predictions": predictions.to_csv(),
+        }
+    except Exception as e:
+        print(e)
+    finally:
+        if os.path.exists(temp_image_path):
+            os.remove(temp_image_path)
+
+
+@router.post(
+    "/image_segmentation/temp_predict",
+    tags=["image_segmentation"],
+    description="Only use in dev and testing, not for production",
+)
+async def img_seg_predict(
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("4-animal"),
+    runName: str = Form("ISE"),
+    image: UploadFile = File(...),
+):
+    print(userEmail)
+    print("Run Name:", runName)
+    try:
+        # write the image to a temporary file
+        temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
+        os.makedirs(Path(temp_image_path).parent, exist_ok=True)
+        with open(temp_image_path, "wb") as buffer:
+            buffer.write(await image.read())
+
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+        predictions = model.predict({"Unnamed: 0": [0], "image": [temp_image_path]})
+
+        # temp_result_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp_predict.txt"
+        np.set_printoptions(threshold=np.inf)
+
+        # print(predictions)
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "proba": "Not a classification problem",
+            "inference_time": perf_counter() - inference_start,
+            "predictions": str(predictions[0].astype(int)),
         }
     except Exception as e:
         print(e)

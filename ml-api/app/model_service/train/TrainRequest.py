@@ -77,3 +77,11 @@ class ImageClassifyTrainRequest(TrainRequest):
 
 class ObjectDetectionTrainRequest(TrainRequest):
     projectName: str = Field(default="mini-motobike", title="Project name")
+
+
+class ImageSegmentationTrainRequest(TrainRequest):
+    image_cols: list[str] = Field(
+        default=["image", "label"],
+        title="Image column",
+        description="List of image columns, used to expand image path",
+    )

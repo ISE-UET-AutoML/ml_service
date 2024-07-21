@@ -103,3 +103,12 @@ class NamedEntityRecognitionTrainRequest(TrainRequest):
         title="Image column",
         description="List of image columns, used to expand image path",
     )
+
+
+class TTSemanticMatchingTrainRequest(TrainRequest):
+    query_col: str = Field(default="premise", title="first text column")
+    response_col: str = Field(default="hypothesis", title="second text column")
+    match_label: int = Field(
+        default=1,
+        title="the label indicating that query and response have the same semantic meanings.",
+    )

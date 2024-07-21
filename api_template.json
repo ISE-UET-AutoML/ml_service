@@ -159,6 +159,29 @@
                 "image_cols": [ ],
                 "metrics": [ "acc", "f1", "precision", "recall", "roc_auc" ]
             }
+        },
+        {
+            "api": "text text semantic matching",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "snli-text-matching",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": "medium_quality",
+                "dataset_url": "1YjR_qyipX44mTPGw2ecn7ud7dqkyyhmy",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
+                "dataset_download_method": "gdrive",
+                "label_column": "label",
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 60
+                    }
+                },
+                "query_col": "premise",
+                "response_col": "hypothesis",
+                "match_label": 1
+            }
         }
     ]
 }

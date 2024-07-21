@@ -11,6 +11,7 @@ from .TrainRequest import (
     ImageSegmentationTrainRequest,
     NamedEntityRecognitionTrainRequest,
     ObjectDetectionTrainRequest,
+    TTSemanticMatchingTrainRequest,
     TabularTrainRequest,
     TrainRequest,
 )
@@ -128,6 +129,27 @@ async def train_named_entity_recognition(request: NamedEntityRecognitionTrainReq
 
     task_id = celery_client.send_task(
         "model_service.named_entity_recognition.train",
+        kwargs={
+            "request": request.dict(),
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+
+@router.post(
+    "/text_text_semantic_matching",
+    tags=["semantic_matching"],
+)
+def train_text_text_semantic_matching(request: TTSemanticMatchingTrainRequest):
+    print("Text Text Semantic Matching Training request received")
+
+    task_id = celery_client.send_task(
+        "model_service.text_text_semantic_matching.train",
         kwargs={
             "request": request.dict(),
         },

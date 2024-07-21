@@ -305,3 +305,59 @@ async def text_predict(
         }
     except Exception as e:
         print(e)
+
+
+@router.post(
+    "text_text_semantic_matching/temp_predict",
+    tags=["semantic_matching"],
+    description="Only use in dev and testing, not for production",
+)
+async def text_text_predict(
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("snli-text-matching"),
+    runName: str = Form("ISE"),
+    query: str = Form(
+        "premise", description="name of the query column in train.csv file"
+    ),
+    response: str = Form(
+        "hypothesis", description="name of the response column in train.csv file"
+    ),
+    text1: str = Form(...),
+    text2: str = Form(...),
+):
+    print(userEmail)
+    print("Run Name:", runName)
+    try:
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+
+        predictions = model.predict({query: [text1], response: [text2]})
+        np.set_printoptions(threshold=np.inf)
+
+        try:
+            proba: pandas.DataFrame = model.predict_proba(
+                {query: [text1], response: [text2]}
+            )
+        except Exception as e:
+            return {
+                "status": "success",
+                "message": "Prediction completed",
+                "load_time": load_time,
+                "proba": "Not a classification problem",
+                "inference_time": perf_counter() - inference_start,
+                "predictions": str(predictions),
+            }
+
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "proba": str(proba),
+            "inference_time": perf_counter() - inference_start,
+            "predictions": str(predictions),
+        }
+    except Exception as e:
+        print(e)

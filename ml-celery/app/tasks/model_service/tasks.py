@@ -7,6 +7,7 @@ from . import _generic_mm_prediction
 from . import _image_segmentation
 from . import _named_entity_recognition
 from . import _text_text_semantic_matching
+from . import _time_series
 
 
 @shared_task(
@@ -72,3 +73,11 @@ def named_entity_recognition_train(self, request: dict):
 )
 def text_text_semantic_matching_train(self, request: dict):
     return _text_text_semantic_matching.train(self.request.id, request)
+
+
+@shared_task(
+    bind=True,
+    name="model_service.time_series.train",
+)
+def time_series_train(self, request: dict):
+    return _time_series.train(self.request.id, request)

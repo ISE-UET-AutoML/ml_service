@@ -112,3 +112,23 @@ class TTSemanticMatchingTrainRequest(TrainRequest):
         default=1,
         title="the label indicating that query and response have the same semantic meanings.",
     )
+
+
+class TimeSeriesTrainRequest(TrainRequest):
+    prediction_length: int = Field(
+        default=48,
+        title="Prediction length",
+        description="The number of time steps ahead to predict",
+    )
+    id_col: str = Field(
+        default="item_id",
+        title="ID column",
+    )
+    timestamp_col: str = Field(
+        default="timestamp",
+        title="Timestamp column",
+    )
+    known_covariates: list[str] = Field(
+        default=[],
+        description="known covariates column in train dataset, if a column is not in known_covariates, it will be interpreted as past covariates",
+    )

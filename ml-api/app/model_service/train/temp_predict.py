@@ -464,14 +464,27 @@ async def time_series_predict(
 
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        predictions = model.predict(test_data, covariates)
+        try:
+            predictions = model.predict(test_data, covariates)
 
-        return {
-            "status": "success",
-            "message": "Prediction completed",
-            "load_time": load_time,
-            "inference_time": perf_counter() - inference_start,
-            "predictions": predictions.to_csv(),
-        }
+            return {
+                "status": "success",
+                "message": "Prediction completed",
+                "load_time": load_time,
+                "inference_time": perf_counter() - inference_start,
+                "predictions": predictions.to_csv(),
+            }
+        except Exception as e:
+            print(e)
+            return {
+                "status": "failed",
+                "message": "bad request, maybe check your known covariates file",
+                "description": (
+                    "Note that known_covariates must satisfy the following conditions:\n"
+                    "The columns must include all columns listed in predictor.known_covariates_names\n"
+                    "The item_id index must include all item ids present in train_data\n"
+                    "The timestamp index must include the values for prediction_length many time steps into the future from the end of each time series in train_data\n"
+                ),
+            }
     except Exception as e:
         print(e)

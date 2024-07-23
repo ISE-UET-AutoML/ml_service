@@ -75,6 +75,7 @@ def train(task_id: str, request: dict):
         query = request["query_col"]
         response = request["response_col"]
         label = request["label_column"]
+        match_label = request["match_label"] | 1
 
         # # training job của mình sẽ chạy ở đây
         predictor = MultiModalPredictor(
@@ -82,7 +83,7 @@ def train(task_id: str, request: dict):
             query=query,  # the column name of the first sentence
             response=response,  # the column name of the second sentence
             label=label,  # the label column name
-            match_label=1,  # the label indicating that query and response have the same semantic meanings.
+            match_label=match_label,  # the label indicating that query and response have the same semantic meanings.
             eval_metric="roc_auc",  # the evaluation metric
         )
 

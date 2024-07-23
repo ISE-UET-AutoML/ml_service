@@ -164,6 +164,27 @@ def train_text_text_semantic_matching(request: TTSemanticMatchingTrainRequest):
 
 
 @router.post(
+    "/img_img_semantic_matching",
+    tags=["semantic_matching"],
+)
+def train_img_semantic_matching(request: TTSemanticMatchingTrainRequest):
+    print("Text Text Semantic Matching Training request received")
+
+    task_id = celery_client.send_task(
+        "model_service.img_img_semantic_matching.train",
+        kwargs={
+            "request": request.dict(),
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+
+@router.post(
     "/time_series",
     tags=["time_series"],
 )

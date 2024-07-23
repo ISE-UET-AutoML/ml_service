@@ -2,6 +2,7 @@ from email.mime import image
 from io import StringIO
 import re
 from typing import Optional, Union
+from urllib import response
 from zipfile import ZipFile
 from fastapi import APIRouter, File, Form, UploadFile
 import pandas
@@ -434,6 +435,71 @@ async def text_text_predict(
         }
     except Exception as e:
         print(e)
+
+
+@router.post(
+    "/img_img_semantic_matching/temp_predict",
+    tags=["semantic_matching"],
+    description="Only use in dev and testing, not for production",
+)
+async def img_img_predict(
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("4animal-image-matching"),
+    runName: str = Form("ISE"),
+    query: str = Form("image1", title="name of the first image column"),
+    response: str = Form("image2", title="name of the second image column"),
+    image1: UploadFile = File(...),
+    image2: UploadFile = File(...),
+):
+    temp_image_path1 = f"{TEMP_DIR}/{userEmail}/{projectName}/temp1.jpg"
+    os.makedirs(Path(temp_image_path1).parent, exist_ok=True)
+    with open(temp_image_path1, "wb") as buffer:
+        buffer.write(await image1.read())
+    temp_image_path2 = f"{TEMP_DIR}/{userEmail}/{projectName}/temp2.jpg"
+    os.makedirs(Path(temp_image_path2).parent, exist_ok=True)
+    with open(temp_image_path2, "wb") as buffer:
+        buffer.write(await image2.read())
+    try:
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+
+        predictions = model.predict(
+            {query: [temp_image_path1], response: [temp_image_path2]}
+        )
+        np.set_printoptions(threshold=np.inf)
+
+        try:
+            proba: pandas.DataFrame = model.predict_proba(
+                {query: [temp_image_path1], response: [temp_image_path2]}
+            )
+        except Exception as e:
+            return {
+                "status": "success",
+                "message": "Prediction completed",
+                "load_time": load_time,
+                "proba": "Not a classification problem",
+                "inference_time": perf_counter() - inference_start,
+                "predictions": str(predictions),
+            }
+
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "proba": str(proba),
+            "inference_time": perf_counter() - inference_start,
+            "predictions": str(predictions),
+        }
+    except Exception as e:
+        print(e)
+    finally:
+        if os.path.exists(temp_image_path1):
+            os.remove(temp_image_path1)
+        if os.path.exists(temp_image_path2):
+            os.remove(temp_image_path2)
 
 
 @router.post(

@@ -92,7 +92,27 @@
                     "ag_fit_args": {
                         "time_limit": 60
                     }
-                }
+                }, "problem_type": null,
+                "image_cols": [
+                    "Images"
+                ],
+                "metrics": null
+            },
+            "sapmple predict": {
+                "userEmail": "test-automl",
+                "projectName": "petfinder",
+                "runName": "ISE",
+                "dataset": {
+                    "dataset_url": "1Cpaez6qWHl7GPoObNIzzkzvwrZn8dzZK",
+                    "gcloud_dataset_bucketname": "",
+                    "gcloud_dataset_directory": "",
+                    "dataset_download_method": "gdrive"
+                },
+                "predict_file": "test.csv",
+                "evaluate": false,
+                "image_cols": [
+                    "Images"
+                ]
             }
         }, {
             "api": "image segmentation",
@@ -135,6 +155,22 @@
                     }
                 },
                 "image_cols": [ "image" ]
+            },
+            "sapmple predict": {
+                "userEmail": "test-automl",
+                "projectName": "twitter-ner",
+                "runName": "ISE",
+                "dataset": {
+                    "dataset_url": "1Ew-cwl21aTqeME_muYh7OOV1sDYcB5qN",
+                    "gcloud_dataset_bucketname": "",
+                    "gcloud_dataset_directory": "",
+                    "dataset_download_method": "gdrive"
+                },
+                "predict_file": "twitter17_test.csv",
+                "evaluate": false,
+                "image_cols": [
+                    "image"
+                ]
             }
         },
         {

@@ -4,6 +4,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 import redis
 from settings.config import celery_client, redis_client
 from .temp_predict import router as temp_predict_router
+from .celery_predict import router as celery_predict_router
 from helpers import time as time_helper
 from .TrainRequest import (
     GenericMultiModalTrainRequest,
@@ -19,6 +20,7 @@ from .TrainRequest import (
 
 router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
+router.include_router(celery_predict_router, prefix="")
 
 
 @router.post(
@@ -81,7 +83,7 @@ async def train_object_detection(request: ObjectDetectionTrainRequest):
 
 @router.post(
     "/generic_multimodal_prediction",
-    tags=["tabular+image+text classification/regressiion"],
+    tags=["generic_multimodal"],
 )
 async def train_generic_mm_prediction(request: GenericMultiModalTrainRequest):
     print("Generic Multimodal Prediction Training request received")

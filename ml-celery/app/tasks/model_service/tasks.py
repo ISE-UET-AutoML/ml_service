@@ -90,3 +90,14 @@ def img_img_semantic_matching_train(self, request: dict):
 )
 def time_series_train(self, request: dict):
     return _time_series.train(self.request.id, request)
+
+
+import asyncio
+
+
+@shared_task(
+    bind=True,
+    name="model_service.generic_multimodal.temp_predict",
+)
+def generic_multimodal_temp_predict(self, request: dict):
+    return asyncio.run(_generic_mm_prediction.predict(self.request.id, request))

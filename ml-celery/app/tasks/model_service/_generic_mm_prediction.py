@@ -2,6 +2,7 @@ from email.mime import image
 import re
 from zipfile import ZipFile
 from celery import shared_task
+from regex import E
 from sympy import false, use
 from tqdm import tqdm
 from mq_main import redis
@@ -118,3 +119,89 @@ def train(task_id: str, request: dict):
     # if os.path.exists(temp_dataset_path):
     #    os.remove(temp_dataset_path)
     # return {}
+
+
+memory = joblib.Memory(
+    f"{TEMP_DIR}", verbose=0, mmap_mode="r", bytes_limit=1024 * 1024 * 1024 * 100
+)
+
+
+@memory.cache
+def load_model_from_path(model_path: str) -> MultiModalPredictor:
+    return MultiModalPredictor.load(model_path)
+
+
+async def load_model(
+    user_name: str, project_name: str, run_name: str
+) -> MultiModalPredictor:
+    model_path = find_latest_model(
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+    )
+    print("model path: ", model_path)
+    return load_model_from_path(model_path)
+
+
+async def predict(task_id: str, request: dict):
+    print("task_id:", task_id)
+    print("request:", request)
+    print("MultiModal Prediction request received")
+    start = perf_counter()
+    try:
+        user_dataset_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset/predict/"
+        os.makedirs(user_dataset_path, exist_ok=True)
+
+        user_dataset_path = download_dataset(
+            user_dataset_path,
+            True,
+            request["dataset"],
+            request["dataset"]["dataset_download_method"],
+        )
+        predict_file = request["predict_file"]
+        if predict_file == None:
+            predict_file = find_in_current_dir(
+                "", user_dataset_path, is_pattern=True, extension=".csv"
+            )
+        predict_file = f"{user_dataset_path}/{predict_file}"
+
+        predict_data = pd.read_csv(predict_file)
+        for img_col in request["image_cols"]:
+            predict_data[img_col] = predict_data[img_col].apply(
+                lambda x: f"{user_dataset_path}/{x}"
+            )
+
+        model = await load_model(
+            request["userEmail"], request["projectName"], request["runName"]
+        )
+        load_end = perf_counter()
+
+        if request["evaluate"] == True:
+            metrics = model.evaluate(predict_data)
+            end = perf_counter()
+            return {
+                "status": "success",
+                "message": "Evaluation completed",
+                "load_time": load_end - start,
+                "evaluation_time": end - load_end,
+                "metrics": str(metrics),
+            }
+        else:
+            predictions = model.predict(predict_data)
+            try:
+                proba = model.predict_proba(predict_data)
+                proba = proba.to_csv()
+            except Exception as e:
+                proba = "None"
+            end = perf_counter()
+            return {
+                "status": "success",
+                "message": "Prediction completed",
+                "load_time": load_end - start,
+                "inference_time": end - load_end,
+                "proba": proba,
+                "predictions": predictions.to_csv(),
+            }
+    except Exception as e:
+        print(e)
+        return {"status": "error", "message": str(e)}
+    finally:
+        pass

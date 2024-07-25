@@ -1,3 +1,4 @@
+import base64
 from email.mime import image
 from io import StringIO
 import re
@@ -95,9 +96,11 @@ async def img_predict(
             proba: pandas.DataFrame = model.predict_proba(
                 temp_image_path, as_pandas=True, as_multiclass=True
             )
-
             explain_image_path = explainer.explain(temp_image_path)
-
+            encoded_image = ""
+            with open(explain_image_path, "rb") as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+            
         except Exception as e:
             return {
                 "status": "success",
@@ -115,7 +118,7 @@ async def img_predict(
             "proba": proba.to_csv(),
             "inference_time": perf_counter() - inference_start,
             "predictions": str(predictions),
-            "explanation": explain_image_path,
+            "explain_image": encoded_image,
         }
     except Exception as e:
         print(e)

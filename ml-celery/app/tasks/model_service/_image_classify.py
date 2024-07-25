@@ -10,7 +10,6 @@ import gdown
 from .image_classify.autogluon_trainer import AutogluonTrainer
 import uuid
 from autogluon.multimodal import MultiModalPredictor
-from .explainers import ImageExplainer
 import joblib
 from settings.config import TEMP_DIR
 
@@ -160,13 +159,9 @@ async def predict(task_id: str, request: dict):
         start_load = perf_counter()
         # TODO : Load model with any path
         model = await load_model(userEmail, projectName, runName)
-
-        explainer = ImageExplainer("lime", model, temp_explain_image_path)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = model.predict(temp_image_path, realtime=True, save_results=True)
-        explainer = ImageExplainer("lime", model, temp_explain_image_path)
-        explain_image_path = explainer.explain(temp_image_path)
         
         proba: float = 0.98
 
@@ -177,11 +172,9 @@ async def predict(task_id: str, request: dict):
             "proba": proba,
             "inference_time": perf_counter() - inference_start,
             "predictions": str(predictions),
-            "explanation": explain_image_path,
         }
     except Exception as e:
         print(e)
     finally:
-        print('Done')
-        # if os.path.exists(temp_image_path):
-        #     os.remove(temp_image_path)
+        if os.path.exists(temp_image_path):
+            os.remove(temp_image_path)

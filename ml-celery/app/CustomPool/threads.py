@@ -85,4 +85,4 @@ class TaskPool(BasePool):
         children = parent.children(recursive=True)
         for process in children:
             process.send_signal(signal)
-        # parent.send_signal(signal)
+        # parent.send_signal(signal) # kill parent = kill worker = kill all workers

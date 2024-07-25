@@ -1,11 +1,14 @@
+import signal
 import os, sys
+
+from traitlets import default
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import time
-import celery
 from settings import config
-from fastapi import FastAPI
+from fastapi import FastAPI, Form
+from settings.config import celery_client
 
 from model_service.routes import router as model_service_router
 
@@ -15,6 +18,21 @@ app = FastAPI(debug=True)
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+@app.post("/terminate_task")
+def terminate_task(task_id: str = Form(default=""), sig: str = Form(default="SIGTERM")):
+
+    kill_sig = "SIGTERM"  # SIGTERM = exit task subprocess only - expected behavior
+    if sig == "SIGINT":  # SIGINT = cannot exit task
+        kill_sig = signal.SIGINT
+    elif sig == "SIGKILL":  # Not tested
+        kill_sig = signal.SIGKILL
+    elif sig == "SIGUSR1":  # SIGUSR1 = error ?
+        kill_sig = signal.SIGUSR1
+
+    celery_client.control.revoke(task_id, terminate=True, signal=kill_sig)
+    return {"task_id": task_id, "status": "terminated"}
 
 
 app.include_router(

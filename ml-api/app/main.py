@@ -20,7 +20,10 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/terminate_task")
+@app.post(
+    "/terminate_task",
+    description="Terminate long running celery task by id\nNot recommended",
+)
 def terminate_task(task_id: str = Form(default=""), sig: str = Form(default="SIGTERM")):
 
     kill_sig = "SIGTERM"  # SIGTERM = exit task subprocess only - expected behavior

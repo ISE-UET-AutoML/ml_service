@@ -80,7 +80,11 @@ async def img_predict(
         # write the image to a temporary file
         temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
         temp_explain_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/explain.jpg"
+        temp_directory_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp"
         os.makedirs(Path(temp_image_path).parent, exist_ok=True)
+        os.makedirs(Path(temp_explain_image_path).parent, exist_ok=True)
+        os.makedirs(temp_directory_path, exist_ok=True)
+
         with open(temp_image_path, "wb") as buffer:
             buffer.write(await image.read())
 
@@ -91,25 +95,18 @@ async def img_predict(
         inference_start = perf_counter()
         predictions = model.predict(temp_image_path, realtime=True, save_results=True)
 
-        explainer = ImageExplainer("lime", model, temp_explain_image_path, 10)
+        explainer = ImageExplainer("lime", model, temp_directory_path, 10)
         try:
             proba: pandas.DataFrame = model.predict_proba(
                 temp_image_path, as_pandas=True, as_multiclass=True
             )
-            explain_image_path = explainer.explain(temp_image_path)
+            explain_image_path = explainer.explain(temp_image_path, temp_explain_image_path)
             encoded_image = ""
             with open(explain_image_path, "rb") as image_file:
                 encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
             
         except Exception as e:
-            return {
-                "status": "success",
-                "message": "Prediction completed",
-                "load_time": load_time,
-                "proba": "Not a classification problem",
-                "inference_time": perf_counter() - inference_start,
-                "predictions": predictions.to_csv(),
-            }
+            print(e)
 
         return {
             "status": "success",

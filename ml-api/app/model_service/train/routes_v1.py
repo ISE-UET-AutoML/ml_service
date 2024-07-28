@@ -1,7 +1,7 @@
-import re
+from math import e
+from pyexpat import model
 import uuid
 from fastapi import APIRouter, File, Form, UploadFile
-import redis
 from settings.config import celery_client, redis_client
 from .temp_predict import router as temp_predict_router
 from .celery_predict import router as celery_predict_router
@@ -17,10 +17,54 @@ from .TrainRequest import (
     TimeSeriesTrainRequest,
     TrainRequest,
 )
+from settings.config import TEMP_DIR
+import os
 
 router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
 router.include_router(celery_predict_router, prefix="")
+
+from .temp_predict import load_model, load_model_from_path, find_latest_model
+
+
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+import pandas as pd
+
+
+@router.get(
+    "/fit_history/",
+    description=("Get fit history of a model.\nOnly work with multimmodal model"),
+)
+async def get_fit_history(
+    userEmail: str = "test-automl",
+    projectName: str = "petfinder",
+    runName: str = "ISE",
+    task_id: str = "lastest",
+):
+    # load event file
+    model_path = f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/{runName}"
+    if task_id == "lastest":
+        model_path = find_latest_model(model_path).removesuffix("/model.ckpt")
+    else:
+        model_path = f"{model_path}/{task_id}"
+    event_file = ""
+    for file in os.listdir(model_path):
+        if file.startswith("events.out.tfevents"):
+            event_file = f"{model_path}/{file}"
+            break
+    if event_file == "":
+        return {"error": "No event file found"}
+
+    ea = EventAccumulator(event_file).Reload()
+
+    tags = ea.Tags()
+    scalars = tags["scalars"]
+    scalars_data = {}
+    for scalar in scalars:
+        df = pd.DataFrame(ea.Scalars(scalar), index=None)
+        csv = df.to_csv()
+        scalars_data[scalar] = csv
+    return {"fit_history": {"scalars": scalars_data}}
 
 
 @router.post(

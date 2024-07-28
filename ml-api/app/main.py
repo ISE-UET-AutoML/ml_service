@@ -33,6 +33,10 @@ def terminate_task(task_id: str = Form(default=""), sig: str = Form(default="SIG
         kill_sig = signal.SIGKILL
     elif sig == "SIGUSR1":  # SIGUSR1 = error ?
         kill_sig = signal.SIGUSR1
+    elif sig == "SIGSTOP":
+        kill_sig = signal.SIGSTOP
+    elif sig == "SIGCONT":
+        kill_sig = signal.SIGCONT
 
     celery_client.control.revoke(task_id, terminate=True, signal=kill_sig)
     return {"task_id": task_id, "status": "terminated"}

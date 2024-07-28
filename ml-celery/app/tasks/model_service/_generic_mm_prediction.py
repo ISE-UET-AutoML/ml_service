@@ -110,6 +110,7 @@ def train(task_id: str, request: dict):
             "metrics": metrics,
             "training_evaluation_time": end - start,
             "saved_model_path": user_model_path,
+            # "fit_summary": predictor.fit_summary(verbosity=4, show_plot=True),
         }
 
     except Exception as e:

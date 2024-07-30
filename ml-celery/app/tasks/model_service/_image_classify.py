@@ -102,13 +102,13 @@ def train(task_id: str, request: dict):
 
         acc = AutogluonTrainer.evaluate(model, Path(f"{user_dataset_path}/test.csv"))
         print("Evaluate model successfully")
-        acc = 0.98
+        # acc = 0.98
 
         end = perf_counter()
         redis.set(f"status-{task_id}", "SUCCESS")
 
         return {
-            "validation_accuracy": acc,
+            "metrics": acc,
             "training_evaluation_time": end - start,
             "saved_model_path": user_model_path,
         }

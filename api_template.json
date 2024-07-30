@@ -79,7 +79,7 @@
             "api": "generic multimodal",
             "sample request": {
                 "userEmail": "test-automl",
-                "projectName": "titanic",
+                "projectName": "petfinder",
                 "training_time": 60,
                 "runName": "ISE",
                 "presets": "medium_quality",
@@ -92,8 +92,177 @@
                     "ag_fit_args": {
                         "time_limit": 60
                     }
-                }
+                }, "problem_type": null,
+                "image_cols": [
+                    "Images"
+                ],
+                "metrics": null
+            },
+            "sapmple predict": {
+                "userEmail": "test-automl",
+                "projectName": "petfinder",
+                "runName": "ISE",
+                "dataset": {
+                    "dataset_url": "1Cpaez6qWHl7GPoObNIzzkzvwrZn8dzZK",
+                    "gcloud_dataset_bucketname": "",
+                    "gcloud_dataset_directory": "",
+                    "dataset_download_method": "gdrive"
+                },
+                "predict_file": "test.csv",
+                "evaluate": false,
+                "image_cols": [
+                    "Images"
+                ]
             }
-        }
+        }, {
+            "api": "image segmentation",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "leaf-disease",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": "medium_quality",
+                "dataset_url": "1XMwlXOGt8neCd1YbsMBmkrL_31ttH4CX",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
+                "dataset_download_method": "gdrive",
+                "label_column": "label",
+                "image_cols": [ "image", "label" ],
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 0
+                    }
+                }
+            },
+            "test predict notebook": "https://colab.research.google.com/drive/1zhpvr472hbVGvfuFz6uF91Y8mxyrxuxx#scrollTo=IUVHch8HgWNz"
+        },
+        {
+            "api": "named_entity_recognition",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "twitter-ner",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": "medium_quality",
+                "dataset_url": "1Ew-cwl21aTqeME_muYh7OOV1sDYcB5qN",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
+                "dataset_download_method": "gdrive",
+                "label_column": "entity_annotations",
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 60
+                    }
+                },
+                "image_cols": [ "image" ]
+            },
+            "sapmple predict": {
+                "userEmail": "test-automl",
+                "projectName": "twitter-ner",
+                "runName": "ISE",
+                "dataset": {
+                    "dataset_url": "1Ew-cwl21aTqeME_muYh7OOV1sDYcB5qN",
+                    "gcloud_dataset_bucketname": "",
+                    "gcloud_dataset_directory": "",
+                    "dataset_download_method": "gdrive"
+                },
+                "predict_file": "twitter17_test.csv",
+                "evaluate": false,
+                "image_cols": [
+                    "image"
+                ]
+            }
+        },
+        {
+            "api": "generic multimodal - text classify",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "text-classify",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": "medium_quality",
+                "dataset_url": "1_dvynVtsyFgnR0RUGzCjpdalpXW2RiPr",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
+                "dataset_download_method": "gdrive",
+                "label_column": "label",
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 60
+                    }
+                },
+                "problem_type": null,
+                "image_cols": [ ],
+                "metrics": [ "acc", "f1", "precision", "recall", "roc_auc" ]
+            }
+        },
+        {
+            "api": "text text semantic matching",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "snli-text-matching",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": "medium_quality",
+                "dataset_url": "1YjR_qyipX44mTPGw2ecn7ud7dqkyyhmy",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
+                "dataset_download_method": "gdrive",
+                "label_column": "label",
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 60
+                    }
+                },
+                "query_col": "premise",
+                "response_col": "hypothesis",
+                "match_label": 1
+            }
+        },
+        {
+            "api": "time series",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "m4-hourly-timeseries",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": "medium_quality",
+                "dataset_url": "1bFxAlKEskm7OEY_2oqpq9jAqcLgnYFi-",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
+                "dataset_download_method": "gdrive",
+                "label_column": "target",
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 60
+                    }
+                },
+                "prediction_length": 48,
+                "id_col": "item_id",
+                "timestamp_col": "timestamp"
+            }
+        },
+        {
+            "api": "image matching",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectName": "4animal-image-matching",
+                "training_time": 60,
+                "runName": "ISE",
+                "presets": "medium_quality",
+                "dataset_url": "1af2D37XKrb1rwEx8YOokmwLZVVMehC5b",
+                "gcloud_dataset_bucketname": "string",
+                "gcloud_dataset_directory": "string",
+                "dataset_download_method": "gdrive",
+                "label_column": "score",
+                "training_argument": {
+                    "ag_fit_args": {
+                        "time_limit": 60
+                    }
+                },
+                "query_col": "image1",
+                "response_col": "image2",
+                "match_label": 1
+            } }
     ]
 }

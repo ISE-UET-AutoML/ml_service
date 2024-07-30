@@ -3,7 +3,7 @@ import logging
 import re
 from zipfile import ZipFile
 from celery import shared_task
-from sympy import false, use
+from sympy import false, im, use
 from tqdm import tqdm
 from mq_main import redis
 from time import perf_counter
@@ -13,6 +13,7 @@ import uuid
 from autogluon.multimodal import MultiModalPredictor
 import joblib
 from settings.config import TEMP_DIR
+import pandas as pd
 
 
 from utils.dataset_utils import (
@@ -22,8 +23,8 @@ from utils.dataset_utils import (
     remove_folders_except,
     create_folder,
     download_dataset,
-    download_dataset,
 )
+from utils.train_utils import find_in_current_dir
 import os
 from pathlib import Path
 import shutil
@@ -40,13 +41,7 @@ def train(task_id: str, request: dict):
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
         )
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
-        # if os.path.exists(user_dataset_path) == False:
-        #     user_dataset_path = download_dataset(
-        #         user_dataset_path,
-        #         True,
-        #         request["dataset_url"],
-        #         request["dataset_download_method"],
-        #    )
+
         if os.path.exists(user_model_path):
             shutil.rmtree(user_model_path)
 
@@ -60,35 +55,76 @@ def train(task_id: str, request: dict):
         download_end = perf_counter()
         print("Download dataset successfully ", user_dataset_path)
 
-        #! temporary, train and val should be split, file name should be changed
-        data_dir = Path(user_dataset_path)
-        train_path = os.path.join(data_dir, "Annotations", "trainval_cocoformat.json")
-        test_path = os.path.join(data_dir, "Annotations", "test_cocoformat.json")
+        train_path = find_in_current_dir(
+            "train", user_dataset_path, is_pattern=True, extension=".csv"
+        )
+        val_path = find_in_current_dir(
+            "val", user_dataset_path, is_pattern=True, extension=".csv"
+        )
+        if val_path == train_path:
+            val_path = None
+        test_path = find_in_current_dir(
+            "test", user_dataset_path, is_pattern=True, extension=".csv"
+        )
+        train_path = f"{user_dataset_path}/{train_path}"
+        if val_path is not None:
+            val_path = f"{user_dataset_path}/{val_path}"
+        test_path = f"{user_dataset_path}/{test_path}"
 
         presets = request["presets"]
 
+        print("loaded dataset path:")
+        print(train_path)
+        print(val_path)
+        print(test_path)
+
+        train_data = pd.read_csv(train_path)
+        val_data = None
+        if val_path is not None:
+            val_data = pd.read_csv(val_path)
+        test_data = pd.read_csv(test_path)
+
+        for img_col in request["image_cols"]:
+            train_data[img_col] = train_data[img_col].apply(
+                lambda x: f"{user_dataset_path}/{x}"
+            )
+            if val_path is not None:
+                val_data[img_col] = val_data[img_col].apply(
+                    lambda x: f"{user_dataset_path}/{x}"
+                )
+            test_data[img_col] = test_data[img_col].apply(
+                lambda x: f"{user_dataset_path}/{x}"
+            )
+
+        print(train_data.head())
         # training job của mình sẽ chạy ở đây
         predictor = MultiModalPredictor(
-            problem_type="object_detection",
-            sample_data_path=train_path,
+            problem_type="semantic_segmentation",
             path=user_model_path,
+            label=request["label_column"],
+            hyperparameters={
+                "model.sam.checkpoint_name": "facebook/sam-vit-base",
+            },
         )
         logging.basicConfig(level=logging.DEBUG)
+
+        if presets == "medium_quality":
+            train_data = train_data.sample(n=20)
+            val_data = val_data.sample(n=10)
 
         print("created predictor")
 
         predictor.fit(
-            train_path,
+            train_data,
+            tuning_data=val_data,
             time_limit=request["training_time"],
             presets=presets,
             save_path=user_model_path,
         )
 
-        print(predictor.eval_metric)
-
         print("Training model successfully")
 
-        metrics = predictor.evaluate(test_path)
+        metrics = predictor.evaluate(test_data, metrics=["iou"])
         # print(metrics)
         print("Evaluate model successfully")
 
@@ -106,5 +142,3 @@ def train(task_id: str, request: dict):
     # finally:
     # if os.path.exists(temp_dataset_path):
     #    os.remove(temp_dataset_path)
-
-

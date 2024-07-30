@@ -1,8 +1,9 @@
+from cProfile import label
 from email.mime import image
 import re
+from urllib import response
 from zipfile import ZipFile
 from celery import shared_task
-from regex import E
 from sympy import false, use
 from tqdm import tqdm
 from mq_main import redis
@@ -24,6 +25,8 @@ from utils.dataset_utils import (
     download_dataset,
 )
 from utils.train_utils import find_in_current_dir
+
+import shutil
 import os
 from pathlib import Path
 import pandas as pd
@@ -42,6 +45,8 @@ def train(task_id: str, request: dict):
         )
         os.makedirs(user_dataset_path, exist_ok=True)
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
+        if os.path.exists(user_model_path):
+            shutil.rmtree(user_model_path)
 
         # TODO: download dataset in this function
         user_dataset_path = download_dataset(
@@ -65,14 +70,20 @@ def train(task_id: str, request: dict):
             val_path = f"{user_dataset_path}/{val_path}"
         test_path = f"{user_dataset_path}/{test_path}"
 
+        presets = request["presets"]
+
+        query = request["query_col"]
+        response = request["response_col"]
+        label = request["label_column"]
+        match_label = request["match_label"] | 1
+
         # expanding image path
         train_data = pd.read_csv(train_path)
         val_data = None
         if val_path is not None:
             val_data = pd.read_csv(val_path)
         test_data = pd.read_csv(test_path)
-
-        for img_col in request["image_cols"]:
+        for img_col in [query, response]:
             train_data[img_col] = train_data[img_col].apply(
                 lambda x: f"{user_dataset_path}/{x}"
             )
@@ -83,14 +94,14 @@ def train(task_id: str, request: dict):
             test_data[img_col] = test_data[img_col].apply(
                 lambda x: f"{user_dataset_path}/{x}"
             )
-
-        presets = request["presets"]
-
         # # training job của mình sẽ chạy ở đây
         predictor = MultiModalPredictor(
-            label=request["label_column"],
-            problem_type=request["problem_type"],
-            path=user_model_path,
+            problem_type="image_similarity",
+            query=query,  # the column name of the first sentence
+            response=response,  # the column name of the second sentence
+            label=label,  # the label column name
+            match_label=match_label,  # the label indicating that query and response have the same semantic meanings.
+            eval_metric="roc_auc",  # the evaluation metric
         )
 
         predictor.fit(
@@ -100,9 +111,11 @@ def train(task_id: str, request: dict):
             presets=presets,
             save_path=user_model_path,
         )
+        print("Training model successfully")
 
-        metrics = predictor.evaluate(test_data, metrics=request["metrics"])
-        # print("Training model successfully")
+        metrics = predictor.evaluate(test_data, metrics=["roc_auc", "accuracy"])
+
+        print("Evaluation metrics: ", metrics)
 
         end = perf_counter()
 
@@ -110,7 +123,6 @@ def train(task_id: str, request: dict):
             "metrics": metrics,
             "training_evaluation_time": end - start,
             "saved_model_path": user_model_path,
-            # "fit_summary": predictor.fit_summary(verbosity=4, show_plot=True),
         }
 
     except Exception as e:
@@ -120,89 +132,3 @@ def train(task_id: str, request: dict):
     # if os.path.exists(temp_dataset_path):
     #    os.remove(temp_dataset_path)
     # return {}
-
-
-memory = joblib.Memory(
-    f"{TEMP_DIR}", verbose=0, mmap_mode="r", bytes_limit=1024 * 1024 * 1024 * 100
-)
-
-
-@memory.cache
-def load_model_from_path(model_path: str) -> MultiModalPredictor:
-    return MultiModalPredictor.load(model_path)
-
-
-async def load_model(
-    user_name: str, project_name: str, run_name: str
-) -> MultiModalPredictor:
-    model_path = find_latest_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
-    )
-    print("model path: ", model_path)
-    return load_model_from_path(model_path)
-
-
-async def predict(task_id: str, request: dict):
-    print("task_id:", task_id)
-    print("request:", request)
-    print("MultiModal Prediction request received")
-    start = perf_counter()
-    try:
-        user_dataset_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset/predict/"
-        os.makedirs(user_dataset_path, exist_ok=True)
-
-        user_dataset_path = download_dataset(
-            user_dataset_path,
-            True,
-            request["dataset"],
-            request["dataset"]["dataset_download_method"],
-        )
-        predict_file = request["predict_file"]
-        if predict_file == None:
-            predict_file = find_in_current_dir(
-                "", user_dataset_path, is_pattern=True, extension=".csv"
-            )
-        predict_file = f"{user_dataset_path}/{predict_file}"
-
-        predict_data = pd.read_csv(predict_file)
-        for img_col in request["image_cols"]:
-            predict_data[img_col] = predict_data[img_col].apply(
-                lambda x: f"{user_dataset_path}/{x}"
-            )
-
-        model = await load_model(
-            request["userEmail"], request["projectName"], request["runName"]
-        )
-        load_end = perf_counter()
-
-        if request["evaluate"] == True:
-            metrics = model.evaluate(predict_data)
-            end = perf_counter()
-            return {
-                "status": "success",
-                "message": "Evaluation completed",
-                "load_time": load_end - start,
-                "evaluation_time": end - load_end,
-                "metrics": str(metrics),
-            }
-        else:
-            predictions = model.predict(predict_data)
-            try:
-                proba = model.predict_proba(predict_data)
-                proba = proba.to_csv()
-            except Exception as e:
-                proba = "None"
-            end = perf_counter()
-            return {
-                "status": "success",
-                "message": "Prediction completed",
-                "load_time": load_end - start,
-                "inference_time": end - load_end,
-                "proba": proba,
-                "predictions": predictions.to_csv(),
-            }
-    except Exception as e:
-        print(e)
-        return {"status": "error", "message": str(e)}
-    finally:
-        pass

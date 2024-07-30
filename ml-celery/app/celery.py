@@ -12,7 +12,7 @@ from settings import config
 from mq_main import redis
 
 from settings import celery_config, config
-
+from CustomPool.threads import TaskPool as CustomThreadPool
 
 if not is_backend_running():
     exit()
@@ -26,6 +26,7 @@ app = Celery(
     "ML Service Celery",
     broker=config.BROKER,
     backend=config.REDIS_BACKEND,
+    worker_pool=CustomThreadPool,
 )
 app.autodiscover_tasks(
     [

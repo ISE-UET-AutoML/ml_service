@@ -7,6 +7,17 @@ class BaseExplainer():
         self.model = model
 
     @abc.abstractmethod
-    def explain(self, example):
+    def preprocess(self, instance):
+        """preprocess method to be implemented by subclasses"""
+        return
+
+    @abc.abstractmethod
+    def explain(self, instance):
         """explain method to be implemented by subclasses"""
-        return 
+        return
+
+    @abc.abstractmethod
+    def predict_proba(self, instances):
+        """explain method to be implemented by subclasses"""
+        return
+

@@ -9,13 +9,12 @@ from PIL import Image
 from lime import lime_image
 import matplotlib.pyplot as plt
 from skimage.segmentation import mark_boundaries
-
 # supported methods: LIME, SHAP
 
 class ImageExplainer():
-    def __init__(self, method="lime", predictor=None, temp_path=None, num_samples=5):
+    def __init__(self, method="lime", model=None, temp_path=None, num_samples=5):
+        self.model = model
         self.method = method
-        self.predictor = predictor
         self.temp_path = temp_path
         self.num_samples = num_samples
 
@@ -33,7 +32,7 @@ class ImageExplainer():
             img.save(img_path)
             data = data._append({"image": img_path}, ignore_index=True)
 
-        proba_list = self.predictor.predict_proba(data, as_multiclass=True)
+        proba_list = self.model.predict_proba(data, as_multiclass=True)
         return np.asarray(proba_list).reshape(image_data.shape[0], 4)
     
 
@@ -45,7 +44,7 @@ class ImageExplainer():
             temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=10, hide_rest=False)
 
             # Display the explanation
-            marked_image = mark_boundaries(temp, mask)
+            marked_image = mark_boundaries(temp, mask, mode="thick")
             plt.imsave(image_explain_path, marked_image)
         except Exception as e:
             print(e)

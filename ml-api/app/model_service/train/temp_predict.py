@@ -12,7 +12,7 @@ from autogluon.tabular import TabularPredictor
 from .explainers.ImageExplainer import ImageExplainer
 import joblib
 from settings.config import TEMP_DIR
-
+import shutil
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -62,6 +62,7 @@ async def load_tabular_model(
     print("model path: ", model_path)
     return load_tabular_model_from_path(model_path)
 
+# image predict
 
 @router.post(
     "/image_classification/temp_predict",
@@ -79,8 +80,61 @@ async def img_predict(
     try:
         # write the image to a temporary file
         temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
+        os.makedirs(Path(temp_image_path).parent, exist_ok=True)
+
+        with open(temp_image_path, "wb") as buffer:
+            buffer.write(await image.read())
+
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+        predictions = model.predict(temp_image_path, realtime=True, save_results=True)
+
+        try:
+            proba: pandas.DataFrame = model.predict_proba(
+                temp_image_path, as_pandas=True, as_multiclass=True
+            )
+           
+        except Exception as e:
+            print(e)
+
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "proba": proba.to_csv(),
+            "inference_time": perf_counter() - inference_start,
+            "predictions": str(predictions),
+        }
+    except Exception as e:
+        print(e)
+    finally:
+        if os.path.exists(temp_image_path):
+            os.remove(temp_image_path)
+
+
+# image explain
+@router.post(
+    "/image_classification/explain",
+    tags=["image_classification"],
+    description="Only use in dev and testing, not for production",
+)
+async def img_explain(
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("4-animal"),
+    runName: str = Form("ISE"),
+    image: UploadFile = File(...),
+):
+    print(userEmail)
+    print("Run Name:", runName)
+    try:
+        # write the image to a temporary file
+        temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
         temp_explain_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/explain.jpg"
         temp_directory_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp"
+
         os.makedirs(Path(temp_image_path).parent, exist_ok=True)
         os.makedirs(Path(temp_explain_image_path).parent, exist_ok=True)
         os.makedirs(temp_directory_path, exist_ok=True)
@@ -93,13 +147,9 @@ async def img_predict(
         model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        predictions = model.predict(temp_image_path, realtime=True, save_results=True)
 
-        explainer = ImageExplainer("lime", model, temp_directory_path, 10)
+        explainer = ImageExplainer("lime", model, temp_directory_path, 1000)
         try:
-            proba: pandas.DataFrame = model.predict_proba(
-                temp_image_path, as_pandas=True, as_multiclass=True
-            )
             explain_image_path = explainer.explain(temp_image_path, temp_explain_image_path)
             encoded_image = ""
             with open(explain_image_path, "rb") as image_file:
@@ -110,20 +160,21 @@ async def img_predict(
 
         return {
             "status": "success",
-            "message": "Prediction completed",
+            "message": "Explanation completed",
             "load_time": load_time,
-            "proba": proba.to_csv(),
             "inference_time": perf_counter() - inference_start,
-            "predictions": str(predictions),
             "explain_image": encoded_image,
         }
     except Exception as e:
         print(e)
     finally:
-        print("Done")
-        # if os.path.exists(temp_image_path):
-        #     os.remove(temp_image_path)
+        if os.path.exists(temp_directory_path):
+            shutil.rmtree(temp_directory_path)
 
+
+
+
+# tabular predict
 
 @router.post(
     "tabular_classification/temp_predict",

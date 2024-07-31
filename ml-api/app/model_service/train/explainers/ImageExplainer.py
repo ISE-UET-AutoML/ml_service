@@ -13,6 +13,9 @@ from skimage.segmentation import mark_boundaries
 from .BaseExplainer import BaseExplainer 
 # supported methods: LIME, SHAP
 
+
+IMAGE_SIZE = 256
+
 class ImageExplainer(BaseExplainer):
     def __init__(self, method="lime", model=None, temp_image_directory_path=None, num_samples=100, batch_size=50, class_names=None):
         self.model = model
@@ -26,7 +29,8 @@ class ImageExplainer(BaseExplainer):
         if self.method ==  "lime":
             self.explainer = lime_image.LimeImageExplainer()
         elif self.method == "shap":
-            self.masker = shap.maskers.Image("inpaint_telea", (224, 224, 3))
+            # TODO: adapt masker to image input size
+            self.masker = shap.maskers.Image("inpaint_telea", (IMAGE_SIZE, IMAGE_SIZE, 3))
             self.explainer = shap.Explainer(self.predict_proba, masker=self.masker, output_names=self.class_names)
 
 
@@ -37,7 +41,7 @@ class ImageExplainer(BaseExplainer):
             case "shap":
                 temp_df = pd.DataFrame(columns=["image"])
                 temp_df = temp_df._append({"image": instance}, ignore_index=True)
-                temp_df['image'] = temp_df['image'].apply(lambda x: cv2.resize(imread(x), (224, 224)))
+                temp_df['image'] = temp_df['image'].apply(lambda x: cv2.resize(imread(x), (IMAGE_SIZE, IMAGE_SIZE)))
                 return np.stack(temp_df['image'].values, axis=0)[0:1]
             case _:
                 warnings.warn("Method not supported")
@@ -67,7 +71,7 @@ class ImageExplainer(BaseExplainer):
         if self.method == "lime":
             try:
                 explanation = self.explainer.explain_instance(image_input, self.predict_proba, hide_color=0, num_samples=self.num_samples, batch_size=self.batch_size)
-                temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=10, hide_rest=False)
+                temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=False)
 
                 # Display the explanation
                 image_explanation = mark_boundaries(temp, mask, mode="thick")
@@ -78,8 +82,7 @@ class ImageExplainer(BaseExplainer):
                 print("Error in explaining image")
         elif self.method == "shap":
             try:
-                shap_values = self.explainer(image_input, max_evals=self.num_samples, batch_size=self.batch_size, outputs=shap.Explanation.argsort.flip[:4])
-                image_explanation = shap.image_plot(shap_values)
+                shap_values = self.explainer(image_input, max_evals=self.num_samples, batch_size=self.batch_size, outputs=shap.Explanation.argsort.flip[:len(self.class_names)])
                 shap.image_plot(shap_values, show=False)
                 plt.savefig(instance_explain_path, format='jpg')
             except Exception as e:

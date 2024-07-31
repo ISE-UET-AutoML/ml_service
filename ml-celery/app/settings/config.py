@@ -49,3 +49,11 @@ BROKER = "amqp://{user}:{pw}@{hostname}:{port}/{vhost}".format(
 
 GCLOUD = cfg["gcloud"]
 GCP_CREDENTIALS = GCLOUD["GCP_CREDENTIALS"]
+
+# =========================================================================
+#                           BACKEND INFORMATION
+# =========================================================================
+BACKEND = cfg["backend"]
+BACKEND_HOST = BACKEND["host"]
+ACCESS_TOKEN = BACKEND["ACCESS_TOKEN_SECRET"]
+REFRESH_TOKEN = BACKEND["REFRESH_TOKEN_SECRET"]

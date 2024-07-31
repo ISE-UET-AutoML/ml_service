@@ -1,5 +1,7 @@
 import time
+from unittest import result
 from celery import shared_task
+import requests
 from . import _image_classify
 from . import _tabular_classify
 from . import _object_detection
@@ -9,6 +11,7 @@ from . import _named_entity_recognition
 from . import _text_text_semantic_matching
 from . import _img_img_semantic_matching
 from . import _time_series
+from settings.config import BACKEND_HOST
 
 
 @shared_task(
@@ -25,7 +28,14 @@ def time_test(self, request: dict):
     name="model_service.image_classify.train",
 )
 def image_classify_train(self, request: dict):
-    return _image_classify.train(self.request.id, request)
+    result = _image_classify.train(self.request.id, request)
+    # if "saved_model_path" in result:
+    #     res = requests.get(
+    #         f"{BACKEND_HOST}/experiments/deploy/?experiment_name={self.request.id}",
+    #         params={"model_path": result["saved_model_path"]},
+    #     )
+    #     print(res.text)
+    return result
 
 
 @shared_task(

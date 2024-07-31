@@ -9,6 +9,14 @@ class MlResult(BaseModel):
     error: Optional[str] = None
 
 
+class SimpleTrainRequest(BaseModel):
+    userEmail: str = Field(default="test-automl", title="userEmail without @")
+    projectId: str = Field(default="66aa68b3015d0ebc8b61cc76", title="Project name")
+    runName: str = Field(default="ISE", title="Run name")
+    training_time: int = Field(default=60, title="Training Time")
+    presets: str = Field(default="medium_quality", title="Presets")
+
+
 class TrainRequest(BaseModel):
     userEmail: str = Field(default="test-automl", title="userEmail without @")
     projectName: str = Field(default="titanic", title="Project name")

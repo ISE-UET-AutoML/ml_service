@@ -56,7 +56,8 @@ def terminate_task(task_id: str = Form(default=""), sig: str = Form(default="SIG
 
 
 app.include_router(
-    model_service_router, prefix="/model_service", tags=["model_service"]
+    model_service_router,
+    prefix="/model_service",  # tags=["model_service"]
 )
 
 if __name__ == "__main__":

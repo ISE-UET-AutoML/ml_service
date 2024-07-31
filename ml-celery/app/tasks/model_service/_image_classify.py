@@ -43,31 +43,17 @@ def train(task_id: str, request: dict):
         os.makedirs(user_dataset_path, exist_ok=True)
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
 
-        # TODO: download dataset in this function
-        # user_dataset_path = download_dataset(
-        #     user_dataset_path, True, request, request["dataset_download_method"]
-        # )
-        if request["dataset_download_method"] == "gdrive":
-            user_dataset_path = download_dataset(
-                user_dataset_path,
-                True,
-                request,
-                request["dataset_download_method"],
-            )
-        elif request["dataset_download_method"] == "gcloud":
-            print(
-                request["gcloud_dataset_bucketname"],
-                request["gcloud_dataset_directory"],
-            )
-            get_storage_client().download_folder(
-                request["gcloud_dataset_bucketname"],
-                request["gcloud_dataset_directory"],
-                user_dataset_path,
-            )
-            user_dataset_path = (
-                f"{user_dataset_path}/{request['gcloud_dataset_directory']}"
-            )
-
+        user_dataset_path = download_dataset(
+            user_dataset_path,
+            True,
+            request,
+            request["dataset_download_method"],
+        )
+        # if request["dataset_download_method"] == "backend":
+        #     return {
+        #         "status": "success",
+        #         "message": "test Download dataset completed",
+        #     }
         if os.path.exists(f"{user_dataset_path}/split") == False:
             split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
             # # TODO : User can choose ratio to split data @DuongNam
@@ -162,7 +148,7 @@ async def predict(task_id: str, request: dict):
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = model.predict(temp_image_path, realtime=True, save_results=True)
-        
+
         proba: float = 0.98
 
         return {

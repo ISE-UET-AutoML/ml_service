@@ -5,6 +5,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 from settings.config import celery_client, redis_client
 from .temp_predict import router as temp_predict_router
 from .celery_predict import router as celery_predict_router
+from .temp_explain import router as temp_explain_router
 from helpers import time as time_helper
 from .TrainRequest import (
     GenericMultiModalTrainRequest,
@@ -23,6 +24,7 @@ import os
 router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
 router.include_router(celery_predict_router, prefix="")
+router.include_router(temp_explain_router, prefix="")
 
 from .temp_predict import load_model, load_model_from_path, find_latest_model
 

@@ -151,6 +151,7 @@ async def predict(task_id: str, request: dict):
     try:
         # write the image to a temporary file
         temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
+        temp_explain_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/explain.jpg"
         os.makedirs(Path(temp_image_path).parent, exist_ok=True)
         with open(temp_image_path, "wb") as buffer:
             buffer.write(await image.read())
@@ -161,6 +162,7 @@ async def predict(task_id: str, request: dict):
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = model.predict(temp_image_path, realtime=True, save_results=True)
+        
         proba: float = 0.98
 
         return {

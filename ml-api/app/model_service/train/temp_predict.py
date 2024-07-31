@@ -1,3 +1,4 @@
+import base64
 from email.mime import image
 from io import StringIO
 import re
@@ -11,9 +12,10 @@ from time import perf_counter
 from autogluon.multimodal import MultiModalPredictor
 from autogluon.tabular import TabularPredictor
 from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
+from .explainers.ImageExplainer import ImageExplainer
 import joblib
 from settings.config import TEMP_DIR
-
+import shutil
 import numpy as np
 
 from utils.dataset_utils import (
@@ -80,7 +82,7 @@ async def load_tabular_model(
     print("model path: ", model_path)
     return load_tabular_model_from_path(model_path)
 
-
+# image predict
 @router.post(
     "/image_classification/temp_predict",
     tags=["image_classification"],
@@ -554,3 +556,8 @@ async def time_series_predict(
             }
     except Exception as e:
         print(e)
+
+
+
+
+

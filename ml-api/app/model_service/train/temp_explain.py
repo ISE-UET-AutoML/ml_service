@@ -118,7 +118,7 @@ async def img_explain(
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
 
-        explainer = ImageExplainer("lime", model, temp_directory_path, num_samples=500, batch_size=100)
+        explainer = ImageExplainer("lime", model, temp_directory_path, num_samples=100, batch_size=100)
         try:
             explain_image_path = explainer.explain(temp_image_path, temp_explain_image_path)
             encoded_image = ""

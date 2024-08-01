@@ -123,11 +123,12 @@ async def img_class_predict(
         for proba in probas:
             predictions.append({
                 "key": "temp",
-                "class": int(np.argmax(proba)),
+                "class": str(model.class_labels[np.argmax(proba)]),
                 "confidence": round(float(max(proba)), 2)
             })
 
         print(predictions)
+
 
         return {
             "status": "success",

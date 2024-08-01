@@ -28,8 +28,6 @@ from pathlib import Path
 
 
 def train(task_id: str, request: dict):
-    redis.set(f"status-{task_id}", "RUNNING")
-    temp_dataset_path = ""
     print("task_id:", task_id)
     print("request:", request)
     print("Image Classification Training request received")
@@ -49,11 +47,7 @@ def train(task_id: str, request: dict):
             request,
             request["dataset_download_method"],
         )
-        # if request["dataset_download_method"] == "backend":
-        #     return {
-        #         "status": "success",
-        #         "message": "test Download dataset completed",
-        #     }
+
         if os.path.exists(f"{user_dataset_path}/split") == False:
             split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
             # # TODO : User can choose ratio to split data @DuongNam
@@ -71,8 +65,8 @@ def train(task_id: str, request: dict):
                 Path(f"{user_dataset_path}/test.csv"),
             )
             print("Split data successfully")
-        remove_folders_except(Path(user_dataset_path), "split")
-        print("Remove folders except split successfully")
+        # remove_folders_except(Path(user_dataset_path), "split")
+        # print("Remove folders except split successfully")
         trainer = AutogluonTrainer(request["training_argument"])
         print("Create trainer successfully")
         # training job của mình sẽ chạy ở đây
@@ -91,7 +85,6 @@ def train(task_id: str, request: dict):
         # acc = 0.98
 
         end = perf_counter()
-        redis.set(f"status-{task_id}", "SUCCESS")
 
         return {
             "metrics": acc,

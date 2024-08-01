@@ -1,6 +1,7 @@
 import time
 from unittest import result
 from celery import shared_task
+from ._TrainTasks import BaseTrainTask
 import requests
 from . import _image_classify
 from . import _tabular_classify
@@ -26,15 +27,10 @@ def time_test(self, request: dict):
 @shared_task(
     bind=True,
     name="model_service.image_classify.train",
+    base=BaseTrainTask,
 )
 def image_classify_train(self, request: dict):
     result = _image_classify.train(self.request.id, request)
-    # if "saved_model_path" in result:
-    #     res = requests.get(
-    #         f"{BACKEND_HOST}/experiments/deploy/?experiment_name={self.request.id}",
-    #         params={"model_path": result["saved_model_path"]},
-    #     )
-    #     print(res.text)
     return result
 
 

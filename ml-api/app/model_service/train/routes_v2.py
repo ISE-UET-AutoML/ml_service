@@ -26,8 +26,15 @@ async def train_image_classification(request: SimpleTrainRequest):
                 },
             },
             "ag_fit_args": {
-                "time_limit": 60,
-                "hyperparameters": {"env.per_gpu_batch_size": 4, "env.batch_size": 4},
+                "time_limit": 600,
+                "hyperparameters": {
+                    "env.precision": "bf16-mixed",
+                    "env.per_gpu_batch_size": 4,
+                    "env.batch_size": 4,
+                    "optimization.efficient_finetune": "lora",
+                    "optimization.log_every_n_steps": 2,
+                    "model.timm_image.checkpoint_name": "swin_small_patch4_window7_224",
+                },
             },
         },
         "label_column": "label",

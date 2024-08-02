@@ -9,6 +9,14 @@ class MlResult(BaseModel):
     error: Optional[str] = None
 
 
+class SimpleTrainRequest(BaseModel):
+    userEmail: str = Field(default="test-automl", title="userEmail without @")
+    projectId: str = Field(default="66aa68b3015d0ebc8b61cc76", title="Project name")
+    runName: str = Field(default="ISE", title="Run name")
+    training_time: int = Field(default=60, title="Training Time")
+    presets: str = Field(default="medium_quality", title="Presets")
+
+
 class TrainRequest(BaseModel):
     userEmail: str = Field(default="test-automl", title="userEmail without @")
     projectName: str = Field(default="titanic", title="Project name")
@@ -77,3 +85,58 @@ class ImageClassifyTrainRequest(TrainRequest):
 
 class ObjectDetectionTrainRequest(TrainRequest):
     projectName: str = Field(default="mini-motobike", title="Project name")
+
+
+class ImageSegmentationTrainRequest(TrainRequest):
+    image_cols: list[str] = Field(
+        default=["image", "label"],
+        title="Image column",
+        description="List of image columns, used to expand image path",
+    )
+
+
+class GenericMultiModalTrainRequest(TrainRequest):
+    problem_type: str | None = Field(default=None, title="Problem type")
+    image_cols: list[str] = Field(
+        default=["image"],
+        title="Image column",
+        description="List of image columns, used to expand image path",
+    )
+    metrics: str | list[str] | None = Field(default=None, title="Metrics")
+
+
+class NamedEntityRecognitionTrainRequest(TrainRequest):
+    image_cols: list[str] = Field(
+        default=[],
+        title="Image column",
+        description="List of image columns, used to expand image path",
+    )
+
+
+class TTSemanticMatchingTrainRequest(TrainRequest):
+    query_col: str = Field(default="premise", title="first text column")
+    response_col: str = Field(default="hypothesis", title="second text column")
+    match_label: int = Field(
+        default=1,
+        title="the label indicating that query and response have the same semantic meanings.",
+    )
+
+
+class TimeSeriesTrainRequest(TrainRequest):
+    prediction_length: int = Field(
+        default=48,
+        title="Prediction length",
+        description="The number of time steps ahead to predict",
+    )
+    id_col: str = Field(
+        default="item_id",
+        title="ID column",
+    )
+    timestamp_col: str = Field(
+        default="timestamp",
+        title="Timestamp column",
+    )
+    known_covariates: list[str] = Field(
+        default=[],
+        description="known covariates column in train dataset, if a column is not in known_covariates, it will be interpreted as past covariates",
+    )

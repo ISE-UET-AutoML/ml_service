@@ -28,8 +28,6 @@ from pathlib import Path
 
 
 def train(task_id: str, request: dict):
-    redis.set(f"status-{task_id}", "RUNNING")
-    temp_dataset_path = ""
     print("task_id:", task_id)
     print("request:", request)
     print("Image Classification Training request received")
@@ -43,30 +41,12 @@ def train(task_id: str, request: dict):
         os.makedirs(user_dataset_path, exist_ok=True)
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
 
-        # TODO: download dataset in this function
-        # user_dataset_path = download_dataset(
-        #     user_dataset_path, True, request, request["dataset_download_method"]
-        # )
-        if request["dataset_download_method"] == "gdrive":
-            user_dataset_path = download_dataset(
-                user_dataset_path,
-                True,
-                request,
-                request["dataset_download_method"],
-            )
-        elif request["dataset_download_method"] == "gcloud":
-            print(
-                request["gcloud_dataset_bucketname"],
-                request["gcloud_dataset_directory"],
-            )
-            get_storage_client().download_folder(
-                request["gcloud_dataset_bucketname"],
-                request["gcloud_dataset_directory"],
-                user_dataset_path,
-            )
-            user_dataset_path = (
-                f"{user_dataset_path}/{request['gcloud_dataset_directory']}"
-            )
+        user_dataset_path = download_dataset(
+            user_dataset_path,
+            True,
+            request,
+            request["dataset_download_method"],
+        )
 
         if os.path.exists(f"{user_dataset_path}/split") == False:
             split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
@@ -85,8 +65,8 @@ def train(task_id: str, request: dict):
                 Path(f"{user_dataset_path}/test.csv"),
             )
             print("Split data successfully")
-        remove_folders_except(Path(user_dataset_path), "split")
-        print("Remove folders except split successfully")
+        # remove_folders_except(Path(user_dataset_path), "split")
+        # print("Remove folders except split successfully")
         trainer = AutogluonTrainer(request["training_argument"])
         print("Create trainer successfully")
         # training job của mình sẽ chạy ở đây
@@ -102,13 +82,12 @@ def train(task_id: str, request: dict):
 
         acc = AutogluonTrainer.evaluate(model, Path(f"{user_dataset_path}/test.csv"))
         print("Evaluate model successfully")
-        acc = 0.98
+        # acc = 0.98
 
         end = perf_counter()
-        redis.set(f"status-{task_id}", "SUCCESS")
 
         return {
-            "validation_accuracy": acc,
+            "metrics": acc,
             "training_evaluation_time": end - start,
             "saved_model_path": user_model_path,
         }
@@ -151,6 +130,7 @@ async def predict(task_id: str, request: dict):
     try:
         # write the image to a temporary file
         temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
+        temp_explain_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/explain.jpg"
         os.makedirs(Path(temp_image_path).parent, exist_ok=True)
         with open(temp_image_path, "wb") as buffer:
             buffer.write(await image.read())
@@ -161,6 +141,7 @@ async def predict(task_id: str, request: dict):
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = model.predict(temp_image_path, realtime=True, save_results=True)
+
         proba: float = 0.98
 
         return {

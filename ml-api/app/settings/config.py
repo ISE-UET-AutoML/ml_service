@@ -56,3 +56,11 @@ BROKER = "amqp://{user}:{pw}@{hostname}:{port}/{vhost}".format(
 #                          CELERY INFORMATION
 # =========================================================================
 celery_client = celery.Celery(broker=BROKER, backend=REDIS_BACKEND)
+
+# =========================================================================
+#                           BACKEND INFORMATION
+# =========================================================================
+BACKEND = cfg["backend"]
+BACKEND_HOST = BACKEND["host"]
+ACCESS_TOKEN = BACKEND["ACCESS_TOKEN_SECRET"]
+REFRESH_TOKEN = BACKEND["REFRESH_TOKEN_SECRET"]

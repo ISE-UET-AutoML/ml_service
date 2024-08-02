@@ -1,0 +1,43 @@
+from math import e
+from celery import Task
+from cv2 import exp
+from settings.config import BACKEND_HOST, ACCESS_TOKEN
+import requests
+
+
+class BaseTrainTask(Task):
+    def on_success(self, retval, task_id, args, kwargs):
+        """
+        retval – The return value of the task.
+        task_id – Unique id of the executed task.
+        args – Original arguments for the executed task.
+        kwargs – Original keyword arguments for the executed task.
+        """
+        experiment_name = task_id
+        if "saved_model_path" in retval:
+            res = requests.get(
+                f"{BACKEND_HOST}/experiments/deploy/?experiment_name={experiment_name}&experiment_status=DONE",
+                cookies={"accessToken": ACCESS_TOKEN},
+            )
+            print(res.text)
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        exc – The exception raised by the task.
+        task_id – Unique id of the failed task.
+        args – Original arguments for the task that failed.
+        kwargs – Original keyword arguments for the task that failed.
+        """
+        print("Task failed")
+        print(exc)
+        print(task_id)
+        print(args)
+        print(kwargs)
+        print(einfo)
+        print("Task failed")
+        res = requests.post(
+            f"{BACKEND_HOST}/experiments/deploy/?experiment_name={task_id}&experiment_status=FAILED",
+            cookies={"accessToken": ACCESS_TOKEN},
+        )
+        print(res.text)
+        return "Task failed"

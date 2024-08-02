@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from turtle import st
 import splitfolders
 import shutil
 import glob
@@ -8,6 +7,7 @@ from typing import Union
 import gdown
 from zipfile import ZipFile
 from autogluon.core.utils.loaders import load_zip
+from settings.config import BACKEND_HOST, ACCESS_TOKEN, REFRESH_TOKEN
 
 
 def split_data(
@@ -133,11 +133,21 @@ def download_dataset(
     #! Data set may come in many format, this function should be changed to handle all cases
 
     os.makedirs(dataset_dir, exist_ok=True)
-    datafile = ""
     if method == "gdrive":
-        datafile = download_dataset_gdrive(dataset_dir, is_zip, request["dataset_url"])
-    # elif method == "zip_url": #! zip_url is not working
-    # datafile = download_dataset_zip_url(dataset_dir, url)
+        return download_dataset_gdrive(dataset_dir, is_zip, request["dataset_url"])
+    if method == "backend":
+        return download_dataset_backend(dataset_dir, projectID=request["projectName"])
+
+
+def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
+    dataset_url = f"https://drive.google.com/uc?id={url}"
+    if is_zip:
+        datafile = f"{dataset_dir}/data.zip"
+        if not os.path.exists(datafile):
+            gdown.download(url=dataset_url, output=datafile, quiet=False)
+    else:
+        datafile = f"{dataset_dir}/data.csv"
+        gdown.download(url=dataset_url, output=datafile, quiet=False)
 
     if datafile == "":
         raise ValueError("Error in downloading dataset")
@@ -169,16 +179,45 @@ def download_dataset(
                 return dataset_dir
 
 
-def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
-    dataset_url = f"https://drive.google.com/uc?id={url}"
-    if is_zip:
-        dataset_path = f"{dataset_dir}/data.zip"
-        gdown.download(url=dataset_url, output=dataset_path, quiet=False)
-        return dataset_path
-    else:
-        dataset_path = f"{dataset_dir}/data.csv"
-        gdown.download(url=dataset_url, output=dataset_path, quiet=False)
-        return dataset_path
+def download_dataset_backend(dataset_dir: str, projectID: str):
+
+    if os.path.exists(f"{dataset_dir}data_ok.txt"):  # if data is already downloaded
+        return dataset_dir
+    os.makedirs(dataset_dir, exist_ok=True)
+    with open(f"{dataset_dir}data_ok.txt", "w+") as f:
+        f.write("ok")
+
+    dataset_url = f"{BACKEND_HOST}/projects/{projectID}/datasets"
+    res = requests.get(dataset_url, cookies={"accessToken": ACCESS_TOKEN})
+    if res.status_code != 200:
+        raise ValueError("Error in downloading dataset")
+
+    data = res.json()
+    pages = data["pagination"]["total_page"]
+    for page in range(pages):
+        if page != 0:
+            res = requests.get(
+                dataset_url + f"?page={page+1}", cookies={"accessToken": ACCESS_TOKEN}
+            )
+            data = res.json()
+        for label in data["labels"]:
+            os.makedirs(f"{dataset_dir}{label['value']}", exist_ok=True)
+
+        for image_file in data["files"]:
+            name = f"{image_file['_id']}.jpg"
+            label = image_file["label"]
+            url = image_file["url"].replace("undefined", "localhost")
+            try:
+                with open(f"{dataset_dir}{label}/{name}", "wb+") as f:
+                    f.write(
+                        requests.get(url, cookies={"accessToken": ACCESS_TOKEN}).content
+                    )
+                print("Image downloaded: ", f"{dataset_dir}{label}/{name}")
+            except Exception as e:
+                print(e)
+
+    # print(data)
+    return dataset_dir
 
 
 import requests

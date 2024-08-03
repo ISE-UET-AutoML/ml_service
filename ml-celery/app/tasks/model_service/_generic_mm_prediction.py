@@ -1,20 +1,8 @@
-from email.mime import image
-import re
-from zipfile import ZipFile
-from celery import shared_task
-from regex import E
-from sympy import false, use
-from tqdm import tqdm
-from mq_main import redis
 from time import perf_counter
-import gdown
-from .image_classify.autogluon_trainer import AutogluonTrainer
-import uuid
 from autogluon.multimodal import MultiModalPredictor
 import joblib
 from settings.config import TEMP_DIR
 
-from utils import get_storage_client
 from utils.dataset_utils import (
     find_latest_model,
     split_data,
@@ -99,6 +87,9 @@ def train(task_id: str, request: dict):
             time_limit=request["training_time"],
             presets=presets,
             save_path=user_model_path,
+            hyperparameters=request["training_argument"]["ag_fit_args"][
+                "hyperparameters"
+            ],
         )
 
         metrics = predictor.evaluate(test_data, metrics=request["metrics"])
@@ -110,7 +101,6 @@ def train(task_id: str, request: dict):
             "metrics": metrics,
             "training_evaluation_time": end - start,
             "saved_model_path": user_model_path,
-            # "fit_summary": predictor.fit_summary(verbosity=4, show_plot=True),
         }
 
     except Exception as e:

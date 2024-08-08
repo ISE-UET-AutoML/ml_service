@@ -154,28 +154,25 @@ async def img_explain(
     description="Only use in dev and testing, not for production",
 )
 async def text_explain(
-    userEmail: str = Form(...),
-    projectName: str = Form(...),
-    runName: str = Form(...),
-    text: str = Form(...),
+    request: TextExplainRequest
 ):
 
-    print(userEmail)
-    print(projectName)
-    print("Run Name:", runName)
-    print(text)
+    print(request.userEmail)
+    print(request.projectName)
+    print("Run Name:", request.runName)
+    print(request.text)
 
     start_time = time()
     try:
         start_load = perf_counter()
         # TODO : Load model with any path
-        model = await load_model(userEmail, projectName, runName)
+        model = await load_model(request.userEmail, request.projectName, request.runName)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
 
         explainer = TextExplainer("shap", model, class_names=[label for label in model.class_labels])
         try:
-            explain_html = explainer.explain(text)
+            explain_html = explainer.explain(request.text)
         except Exception as e:
             print(e)
 

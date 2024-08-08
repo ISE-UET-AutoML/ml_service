@@ -77,3 +77,4 @@ from label_studio_sdk.client import LabelStudio
 label_studio_client = LabelStudio(
     base_url=LABEL_STUDIO_HOST, api_key=LABEL_STUDIO_ACCESS_TOKEN
 )
+

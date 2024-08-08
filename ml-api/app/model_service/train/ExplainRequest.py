@@ -11,7 +11,7 @@ class BaseExplainRequest(BaseModel):
 
 # not use for now
 class TextExplainRequest(BaseExplainRequest):
-    texts: list[str] = Field(
+    text: str = Field(
         default="This is a sample text",
         title="texts to explain",
     )

@@ -42,3 +42,4 @@ datetime==4.3
 flower==1.0.0
 lime
 shap
+label-studio-sdk

@@ -18,13 +18,11 @@ IMAGE_SIZE = 256
 
 class ImageExplainer(BaseExplainer):
     def __init__(self, method="lime", model=None, temp_image_directory_path=None, num_samples=100, batch_size=50, class_names=None):
-        self.model = model
+        super().__init__(model, class_names)
         self.method = method
         self.temp_image_directory_path = temp_image_directory_path
         self.num_samples = num_samples
         self.batch_size = batch_size
-        # TODO: fix hardcode value
-        self.class_names = class_names
 
         if self.method ==  "lime":
             self.explainer = lime_image.LimeImageExplainer()
@@ -51,9 +49,10 @@ class ImageExplainer(BaseExplainer):
         proba_list = []
         data = pd.DataFrame(columns=["image"])
         for i in range(instances.shape[0]):
-            img = Image.fromarray(instances[i], 'RGB')
-            img_path = f"{self.temp_image_directory_path}/{i}.jpg"
-            img.save(img_path)
+            # img = Image.fromarray(instances[i], 'RGB')
+            # img_path = f"{self.temp_image_directory_path}/{i}.jpg"
+            # img.save(img_path)
+            img_path = cv2.imencode('.jpg', instances[i])[1].tobytes()
             data = data._append({"image": img_path}, ignore_index=True)
 
         proba_list = self.model.predict_proba(data, as_multiclass=True, realtime=True)
@@ -65,7 +64,6 @@ class ImageExplainer(BaseExplainer):
     
 
     def explain(self, instance, instance_explain_path):
-        print('Explaining')
         image_input = self.preprocess(instance)
         image_explanation = None
         if self.method == "lime":
@@ -76,7 +74,7 @@ class ImageExplainer(BaseExplainer):
                 # Display the explanation
                 image_explanation = mark_boundaries(temp, mask, mode="thick")
                 plt.imsave(instance_explain_path, image_explanation)
-                return instance_explain_path
+                return None
             except Exception as e:
                 print(e)
                 print("Error in explaining image")
@@ -89,4 +87,4 @@ class ImageExplainer(BaseExplainer):
                 print(e)
                 print("Error in explaining image")
 
-        return instance_explain_path
+        return None

@@ -179,3 +179,5 @@ ml-api/testing/
 mydata/
 
 public/
+
+docker-compose.yml

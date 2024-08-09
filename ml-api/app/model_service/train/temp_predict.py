@@ -18,6 +18,7 @@ from settings.config import TEMP_DIR
 import shutil
 import numpy as np
 import pandas as pd
+import uuid
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -122,13 +123,10 @@ async def img_class_predict(
 
         for proba in probas:
             predictions.append({
-                "key": "temp",
+                "key": str(uuid.uuid4()),
                 "class": str(model.class_labels[np.argmax(proba)]),
                 "confidence": round(float(max(proba)), 2)
             })
-
-        print(predictions)
-
 
         return {
             "status": "success",

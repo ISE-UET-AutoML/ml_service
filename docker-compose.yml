@@ -1,4 +1,3 @@
-
 services:
     # Redis
     redis:
@@ -29,50 +28,73 @@ services:
         networks:
             - mlnet
 
-    # API server
-    ml-api:
-        build:
-            context: ./
-            dockerfile: ./ml-api/Dockerfile
-        container_name: ml-api
-        restart: unless-stopped
-        command: sh -c "python ml-api/app/main.py"
-        volumes:
-            - ./ml-api/app:/ml-api/app/
-            - ./api-logs:/logs/
+    # Label Studio
+    label-studio:
+        image: heartexlabs/label-studio:latest
+        container_name: label_studio
         ports:
-            - 8670:8670
-        depends_on:
-            - rabbitmq
-            - redis
+            - 8673:8080
+        volumes:
+            - ./mydata:/label-studio/data
+            # for some stupid reason, label studio is only able to run with mydata folder
+        user: root
+        command: sh -c "pip install -U label-studio && chown 1001:root /label-studio/data && label-studio start"
         networks:
             - mlnet
+    ##
 
-    
-    ml-celery:
-        build: 
-            context: ./
-            dockerfile: ./ml-celery/Dockerfile
-        container_name: ml-celery
-        restart: unless-stopped
-        command: sh -c "celery -A ml-celery.app.celery worker --loglevel=info --concurrency=1 -P threads -E --logfile=/logs/celery.log"
-        volumes:
-            - ./ml-celery/app:/ml-celery/app/
-            - ./celery-logs/:/logs/
-            - ./tmp/:/tmp/
-        depends_on:
-            - rabbitmq
-            - redis
-        networks:
-            - mlnet 
-        
+    # temp-rm:
+    #     # remove any files :)), use this to delete files of label studio
+    #     image: ubuntu
+    #     container_name: temp-rm
+    #     command: sh -c "rm -rf /tmp/*"
+    #     volumes:
+    #         - ./mydata:/tmp/
+
+    # API server
+    # ml-api:
+    #     build:
+    #         context: ./
+    #         dockerfile: ./ml-api/Dockerfile
+    #     container_name: ml-api
+    #     restart: unless-stopped
+    #     command: sh -c "python ml-api/app/main.py"
+    #     volumes:
+    #         - ./ml-api/app:/ml-api/app/
+    #         - ./api-logs:/logs/
+    #     ports:
+    #         - 8670:8670
+    #     depends_on:
+    #         - rabbitmq
+    #         - redis
+    #     networks:
+    #         - mlnet
+
+    # ml-celery:
+    #     build:
+    #         context: ./
+    #         dockerfile: ./ml-celery/Dockerfile
+    #     container_name: ml-celery
+    #     restart: unless-stopped
+    #     command: sh -c "celery -A ml-celery.app.celery worker --loglevel=info --concurrency=1 -P threads -E --logfile=/logs/celery.log"
+    #     volumes:
+    #         - ./ml-celery/app:/ml-celery/app/
+    #         - ./celery-logs/:/logs/
+    #         - ./tmp/:/tmp/
+    #     depends_on:
+    #         - rabbitmq
+    #         - redis
+    #     networks:
+    #         - mlnet
 
 networks:
     mlnet:
+
 
 volumes:
     redis-data:
     rabbitmq-data:
     rabbitmq-logs:
-    celery-logs:
-    api-logs:
+    mydata:
+        # celery-logs:
+        # api-logs:

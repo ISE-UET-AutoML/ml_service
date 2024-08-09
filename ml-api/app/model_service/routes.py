@@ -52,14 +52,3 @@ def result(task_id):
 
 from requests.auth import HTTPBasicAuth
 
-
-@router.post("/getdataset")
-def get_be_dataset(
-    projectID: str = Form(...),
-):
-    # ${BACKENDHOST}/projects/${projectID}/datasets
-    dataset_url = f"{BACKEND_HOST}/projects/{projectID}/datasets"
-
-    temp = requests.get(dataset_url, cookies={"accessToken": ACCESS_TOKEN})
-
-    print(temp.text)

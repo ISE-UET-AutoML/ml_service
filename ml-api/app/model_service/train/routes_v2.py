@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from .TrainRequest import SimpleTrainRequest
-from settings.config import celery_client
+from settings.config import BACKEND_HOST, celery_client
 
 router = APIRouter()
 
@@ -14,8 +14,6 @@ async def train_image_classification(request: SimpleTrainRequest):
         "runName": request.runName,
         "presets": request.presets,
         "dataset_url": "string",
-        "gcloud_dataset_bucketname": "string",
-        "gcloud_dataset_directory": "string",
         "dataset_download_method": "backend",
         "training_argument": {
             "data_args": {},
@@ -26,8 +24,15 @@ async def train_image_classification(request: SimpleTrainRequest):
                 },
             },
             "ag_fit_args": {
-                "time_limit": 60,
-                "hyperparameters": {"env.per_gpu_batch_size": 4, "env.batch_size": 4},
+                "time_limit": 600,
+                "hyperparameters": {
+                    "env.precision": "bf16-mixed",
+                    "env.per_gpu_batch_size": 4,
+                    "env.batch_size": 4,
+                    "optimization.efficient_finetune": "lora",
+                    "optimization.log_every_n_steps": 2,
+                    "model.timm_image.checkpoint_name": "swin_small_patch4_window7_224",
+                },
             },
         },
         "label_column": "label",
@@ -35,6 +40,47 @@ async def train_image_classification(request: SimpleTrainRequest):
 
     task_id = celery_client.send_task(
         "model_service.image_classify.train",
+        kwargs={
+            "request": payload,
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+
+@router.post("/v2/text_prediction", tags=["v2"])
+async def train_text_prediction(request: SimpleTrainRequest):
+    # TODO fix dataset
+    payload = {
+        "userEmail": request.userEmail,
+        "projectName": request.projectId,
+        "training_time": request.training_time,
+        "runName": request.runName,
+        "presets": request.presets,
+        "dataset_url": f"{BACKEND_HOST}/media/upload/{request.projectId}/train.csv",
+        "dataset_download_method": "csv-url",
+        "label_column": "label",
+        "training_argument": {
+            "ag_fit_args": {
+                "hyperparameters": {
+                    "env.per_gpu_batch_size": 4,
+                    "env.batch_size": 4,
+                    "optimization.efficient_finetune": "lora",
+                    "optimization.log_every_n_steps": 2,
+                },
+            },
+        },
+        "problem_type": None,
+        "image_cols": [],
+        "metrics": ["acc", "f1", "precision", "recall", "roc_auc"],
+    }
+
+    task_id = celery_client.send_task(
+        "model_service.generic_mm_prediction.train",
         kwargs={
             "request": payload,
         },

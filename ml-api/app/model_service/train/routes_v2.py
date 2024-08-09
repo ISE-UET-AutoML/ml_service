@@ -61,7 +61,7 @@ async def train_text_prediction(request: SimpleTrainRequest):
         "training_time": request.training_time,
         "runName": request.runName,
         "presets": request.presets,
-        "dataset_url": f"http://{BACKEND_HOST}/media/upload/{request.projectId}/train.csv",
+        "dataset_url": f"{BACKEND_HOST}/media/upload/{request.projectId}/train.csv",
         "dataset_download_method": "csv-url",
         "label_column": "label",
         "training_argument": {

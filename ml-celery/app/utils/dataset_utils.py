@@ -183,11 +183,11 @@ def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
 
 def download_dataset_csv_url(dataset_dir: str, url: str):
     r = requests.get(url)
-
+    print(f"Downloading dataset from {url}")
     if os.path.exists(f"{dataset_dir}/train.csv"):
         return dataset_dir
 
-    with open(f"{dataset_dir}/train.csv", "wb+") as fd:
+    with open(f"{dataset_dir}train.csv", "wb+") as fd:
         for chunk in r.iter_content(chunk_size=128):
             fd.write(chunk)
     return dataset_dir

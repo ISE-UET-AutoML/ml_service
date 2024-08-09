@@ -1,11 +1,13 @@
 import base64
 from email.policy import HTTP
 from pathlib import Path
+from tkinter import Label
 from turtle import title
 from urllib import response
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from flask import request
 from httpx import head
+import pandas
 import requests
 from sympy import content
 
@@ -22,7 +24,7 @@ from label_studio_sdk.label_interface.create import choices
 from label_studio_sdk.projects import ProjectsCreateResponse
 from label_studio_sdk.projects import ProjectsListResponse
 
-from .LabelServiceRequest import ProjectCreateRequest
+from .LabelServiceRequest import ProjectCreateRequest, ProjectUploadCSVRequest
 
 from .constants import PROJECT_TYPES, DataUploadType
 
@@ -51,14 +53,14 @@ async def create_project(request: ProjectCreateRequest):
         case PROJECT_TYPES.IMAGE_CLASSIFICATION:
             label_interface = LabelInterface.create(
                 {
-                    "image": "image",
+                    "image": "Image",
                     "label": choices(request.label_config.label_choices),
                 }
             )
         case PROJECT_TYPES.TEXT_CLASSIFICATION:
             label_interface = LabelInterface.create(
                 {
-                    "text": "text",
+                    "text": "Text",
                     "label": choices(request.label_config.label_choices),
                 }
             )
@@ -67,7 +69,7 @@ async def create_project(request: ProjectCreateRequest):
                 f"Unknown/Currently not suported project type: {request.type}"
             )
     project = label_studio_client.projects.create(
-        title=request.name, label_config=label_interface
+        title=request.name, description=request.type, label_config=label_interface
     )
 
     return {"id": project.id}
@@ -76,6 +78,14 @@ async def create_project(request: ProjectCreateRequest):
 @router.post("/{project_id}/delete")
 def delete_project(project_id: str):
     return label_studio_client.projects.delete(project_id)
+
+
+@router.post("/{project_id}/delete_tasks")
+def delete_tasks(project_id: str, task_ids: list[str]):
+    for task_id in task_ids:
+        label_studio_client.tasks.delete(
+            ids=task_id,
+        )
 
 
 @router.post("/{project_id}/delete_all_tasks")
@@ -92,7 +102,10 @@ def delete_all_tasks(project_id: str):
 
 @router.post("/{project_id}/upload/{upload_type}")
 async def upload_project(
-    project_id: str, upload_type: str, files: list[UploadFile] = File(...)
+    project_id: str,
+    upload_type: str,
+    # request: ProjectUploadCSVRequest,
+    files: list[UploadFile] = File(...),
 ):
     match upload_type:
         case DataUploadType.IMAGE_LABELED_FOLDER:
@@ -105,18 +118,33 @@ async def upload_project(
             )
 
 
+@router.post("/{project_id}/upload_csv_files/")
+# def upload_csv_files(
+#     project_id: str, request: ProjectUploadCSVRequest, files: UploadFile = File(...)
+# ):
+#     pandas.read_csv(files.file)
+#     if request.data_type == "Tabular":
+#         raise HTTPException(status_code=500, detail="Tabular data type Not implemented")
+
+#     pass
+
+
 async def upload_image_labeled_folder(
     project_id: str, files: list[UploadFile] = File(...)
 ):
+    print(project_id)
     import_tasks = []
     for file in files:
         # file_path = Path(file.filename)
         original_file_name = base64.b64decode(file.filename).decode("ascii")
+        print(original_file_name)
+
         path = original_file_name.split("/")
         label, file_name = path[1], path[2]
         content = file.file.read()
         file_extension = original_file_name.split(".")[-1]
         file_route = save_file_to_public(content, file_extension)
+
         import_tasks.append({"image": file_route, "label": label})
 
     print(import_tasks)
@@ -163,9 +191,9 @@ async def export_task_simple(project_id: str, prediction_as_annotation: bool = F
     prediction_as_annotation: if annotation is not available, use prediction (if available) as annotation
     """
     project = label_studio_client.projects.get(project_id)
-    label_config = xmltodict.parse(label_config)
+    label_config = xmltodict.parse(project.label_config)
     print(label_config)
-    if "Choices" not in label_config:
+    if "Choices" not in label_config["View"]:
         raise ValueError("Only choices type is supported")
 
     tasks = label_studio_client.tasks.list(project=project_id, fields="all")
@@ -200,7 +228,6 @@ async def export_task_simple(project_id: str, prediction_as_annotation: bool = F
     }
 
 
-@router.post("/{project_id}/annotations_to_predictions_test")
 async def create_anotations_from_predictions(
     project_id: str, model_version: str = None
 ):
@@ -221,3 +248,14 @@ async def create_anotations_from_predictions(
         json=payload,
     )
     return response.json()
+
+
+def update_project():
+    pass
+    # label_config = LabelInterface.create(
+    #     {
+    #         "image": "Image",
+    #         "label": choices(["cat", "dog"]),
+    #     }
+    # )
+    # label_studio_client.projects.update()

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from .TrainRequest import SimpleTrainRequest
-from settings.config import celery_client
+from settings.config import BACKEND_HOST, celery_client
 
 router = APIRouter()
 
@@ -61,8 +61,8 @@ async def train_text_prediction(request: SimpleTrainRequest):
         "training_time": request.training_time,
         "runName": request.runName,
         "presets": request.presets,
-        "dataset_url": "1_dvynVtsyFgnR0RUGzCjpdalpXW2RiPr",
-        "dataset_download_method": "gdrive",
+        "dataset_url": f"http://{BACKEND_HOST}/media/upload/{request.projectId}/train.csv",
+        "dataset_download_method": "csv-url",
         "label_column": "label",
         "training_argument": {
             "ag_fit_args": {

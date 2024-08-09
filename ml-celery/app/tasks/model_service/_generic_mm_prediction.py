@@ -40,37 +40,37 @@ def train(task_id: str, request: dict):
         train_path = find_in_current_dir(
             "train", user_dataset_path, is_pattern=True, extension=".csv"
         )
-        val_path = find_in_current_dir(
-            "val", user_dataset_path, is_pattern=True, extension=".csv"
-        )
-        if val_path == train_path:
-            val_path = None
-        test_path = find_in_current_dir(
-            "test", user_dataset_path, is_pattern=True, extension=".csv"
-        )
-        train_path = f"{user_dataset_path}/{train_path}"
-        if val_path is not None:
-            val_path = f"{user_dataset_path}/{val_path}"
-        test_path = f"{user_dataset_path}/{test_path}"
+        # val_path = find_in_current_dir(
+        #     "val", user_dataset_path, is_pattern=True, extension=".csv"
+        # )
+        # if val_path == train_path:
+        #     val_path = None
+        # test_path = find_in_current_dir(
+        #     "test", user_dataset_path, is_pattern=True, extension=".csv"
+        # )
+        # train_path = f"{user_dataset_path}/{train_path}"
+        # if val_path is not None:
+        #     val_path = f"{user_dataset_path}/{val_path}"
+        # test_path = f"{user_dataset_path}/{test_path}"
 
         # expanding image path
         train_data = pd.read_csv(train_path)
-        val_data = None
-        if val_path is not None:
-            val_data = pd.read_csv(val_path)
-        test_data = pd.read_csv(test_path)
+        # val_data = None
+        # if val_path is not None:
+        #     val_data = pd.read_csv(val_path)
+        # test_data = pd.read_csv(test_path)
 
         for img_col in request["image_cols"]:
             train_data[img_col] = train_data[img_col].apply(
                 lambda x: f"{user_dataset_path}/{x}"
             )
-            if val_path is not None:
-                val_data[img_col] = val_data[img_col].apply(
-                    lambda x: f"{user_dataset_path}/{x}"
-                )
-            test_data[img_col] = test_data[img_col].apply(
-                lambda x: f"{user_dataset_path}/{x}"
-            )
+            # if val_path is not None:
+            #     val_data[img_col] = val_data[img_col].apply(
+            #         lambda x: f"{user_dataset_path}/{x}"
+            #     )
+            # test_data[img_col] = test_data[img_col].apply(
+            #     lambda x: f"{user_dataset_path}/{x}"
+            # )
 
         presets = request["presets"]
 
@@ -83,7 +83,7 @@ def train(task_id: str, request: dict):
 
         predictor.fit(
             train_data=train_data,
-            tuning_data=val_data,
+            # tuning_data=val_data,
             time_limit=request["training_time"],
             presets=presets,
             save_path=user_model_path,
@@ -92,13 +92,13 @@ def train(task_id: str, request: dict):
             ],
         )
 
-        metrics = predictor.evaluate(test_data, metrics=request["metrics"])
+        # metrics = predictor.evaluate(test_data, metrics=request["metrics"])
         # print("Training model successfully")
 
         end = perf_counter()
 
         return {
-            "metrics": metrics,
+            "metrics": "temp_metrics",
             "training_evaluation_time": end - start,
             "saved_model_path": user_model_path,
         }

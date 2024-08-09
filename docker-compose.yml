@@ -29,16 +29,16 @@ services:
       - mlnet
 
   # Label Studio
-  label-studio-test:
+  label-studio:
     image: heartexlabs/label-studio:latest
-    container_name: label-studio-test
+    container_name: label_studio
     ports:
-      - ${LABEL_STUDIO_PORT}:${LABEL_STUDIO_PORT}
+      - 8673:8080
     volumes:
       - ./mydata:/label-studio/data
       # for some stupid reason, label studio is only able to run with mydata folder
     user: root
-    command: sh -c "pip install -U label-studio && chown 1001:root /label-studio/data && label-studio start --port ${LABEL_STUDIO_PORT}"
+    command: sh -c "pip install -U label-studio && chown 1001:root /label-studio/data && label-studio start"
     networks:
       - mlnet
   ##
@@ -89,6 +89,7 @@ services:
 
 networks:
   mlnet:
+
 
 volumes:
   redis-data:

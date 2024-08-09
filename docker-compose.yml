@@ -1,100 +1,99 @@
 services:
-    # Redis
-    redis:
-        image: redis
-        container_name: redis
-        restart: unless-stopped
-        command: redis-server --requirepass password
-        volumes:
-            - redis-data:/data
-            - ./redis-logs:/logs/
-        ports:
-            - 8671:6379
-        networks:
-            - mlnet
+  # Redis
+  redis:
+    image: redis
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --requirepass password
+    volumes:
+      - redis-data:/data
+      - ./redis-logs:/logs/
+    ports:
+      - 8671:6379
+    networks:
+      - mlnet
 
-    # Rabbitmq
-    rabbitmq:
-        image: rabbitmq:3-management-alpine
-        container_name: "rabbitmq"
-        ports:
-            - 8672:5672
-        environment:
-            - RABBITMQ_DEFAULT_USER=guest
-            - RABBITMQ_DEFAULT_PASS=guest
-        volumes:
-            - rabbitmq-data:/var/lib/rabbitmq/
-            - rabbitmq-logs:/var/log/rabbitmq
-        networks:
-            - mlnet
+  # Rabbitmq
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: "rabbitmq"
+    ports:
+      - 8672:5672
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/
+      - rabbitmq-logs:/var/log/rabbitmq
+    networks:
+      - mlnet
 
-    # Label Studio
-    label-studio:
-        image: heartexlabs/label-studio:latest
-        container_name: label_studio
-        ports:
-            - 8673:8080
-        volumes:
-            - ./mydata:/label-studio/data
-            # for some stupid reason, label studio is only able to run with mydata folder
-        user: root
-        command: sh -c "pip install -U label-studio && chown 1001:root /label-studio/data && label-studio start"
-        networks:
-            - mlnet
-    ##
+  # Label Studio
+  label-studio-test:
+    image: heartexlabs/label-studio:latest
+    container_name: label-studio-test
+    ports:
+      - ${LABEL_STUDIO_PORT}:${LABEL_STUDIO_PORT}
+    volumes:
+      - ./mydata:/label-studio/data
+      # for some stupid reason, label studio is only able to run with mydata folder
+    user: root
+    command: sh -c "pip install -U label-studio && chown 1001:root /label-studio/data && label-studio start --port ${LABEL_STUDIO_PORT}"
+    networks:
+      - mlnet
+  ##
 
-    # temp-rm:
-    #     # remove any files :)), use this to delete files of label studio
-    #     image: ubuntu
-    #     container_name: temp-rm
-    #     command: sh -c "rm -rf /tmp/*"
-    #     volumes:
-    #         - ./mydata:/tmp/
+  # temp-rm:
+  #     # remove any files :)), use this to delete files of label studio
+  #     image: ubuntu
+  #     container_name: temp-rm
+  #     command: sh -c "rm -rf /tmp/*"
+  #     volumes:
+  #         - ./mydata:/tmp/
 
-    # API server
-    # ml-api:
-    #     build:
-    #         context: ./
-    #         dockerfile: ./ml-api/Dockerfile
-    #     container_name: ml-api
-    #     restart: unless-stopped
-    #     command: sh -c "python ml-api/app/main.py"
-    #     volumes:
-    #         - ./ml-api/app:/ml-api/app/
-    #         - ./api-logs:/logs/
-    #     ports:
-    #         - 8670:8670
-    #     depends_on:
-    #         - rabbitmq
-    #         - redis
-    #     networks:
-    #         - mlnet
+  # API server
+  # ml-api:
+  #     build:
+  #         context: ./
+  #         dockerfile: ./ml-api/Dockerfile
+  #     container_name: ml-api
+  #     restart: unless-stopped
+  #     command: sh -c "python ml-api/app/main.py"
+  #     volumes:
+  #         - ./ml-api/app:/ml-api/app/
+  #         - ./api-logs:/logs/
+  #     ports:
+  #         - 8670:8670
+  #     depends_on:
+  #         - rabbitmq
+  #         - redis
+  #     networks:
+  #         - mlnet
 
-    # ml-celery:
-    #     build:
-    #         context: ./
-    #         dockerfile: ./ml-celery/Dockerfile
-    #     container_name: ml-celery
-    #     restart: unless-stopped
-    #     command: sh -c "celery -A ml-celery.app.celery worker --loglevel=info --concurrency=1 -P threads -E --logfile=/logs/celery.log"
-    #     volumes:
-    #         - ./ml-celery/app:/ml-celery/app/
-    #         - ./celery-logs/:/logs/
-    #         - ./tmp/:/tmp/
-    #     depends_on:
-    #         - rabbitmq
-    #         - redis
-    #     networks:
-    #         - mlnet
+  # ml-celery:
+  #     build:
+  #         context: ./
+  #         dockerfile: ./ml-celery/Dockerfile
+  #     container_name: ml-celery
+  #     restart: unless-stopped
+  #     command: sh -c "celery -A ml-celery.app.celery worker --loglevel=info --concurrency=1 -P threads -E --logfile=/logs/celery.log"
+  #     volumes:
+  #         - ./ml-celery/app:/ml-celery/app/
+  #         - ./celery-logs/:/logs/
+  #         - ./tmp/:/tmp/
+  #     depends_on:
+  #         - rabbitmq
+  #         - redis
+  #     networks:
+  #         - mlnet
 
 networks:
-    mlnet:
-
+  mlnet:
 
 volumes:
-    redis-data:
-    rabbitmq-data:
-    rabbitmq-logs:
-    mydata:
-        # celery-logs:
-        # api-logs:
+  redis-data:
+  rabbitmq-data:
+  rabbitmq-logs:
+  mydata:
+    # celery-logs:
+    # api-logs:

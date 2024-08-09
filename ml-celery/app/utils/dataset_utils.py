@@ -137,6 +137,8 @@ def download_dataset(
         return download_dataset_gdrive(dataset_dir, is_zip, request["dataset_url"])
     if method == "backend":
         return download_dataset_backend(dataset_dir, projectID=request["projectName"])
+    if method == "csv-url":
+        return download_dataset_csv_url(dataset_dir, request["dataset_url"])
 
 
 def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
@@ -177,6 +179,18 @@ def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
                 return f"{dataset_dir}/{root_dir}"
             else:
                 return dataset_dir
+
+
+def download_dataset_csv_url(dataset_dir: str, url: str):
+    r = requests.get(url)
+
+    if os.path.exists(f"{dataset_dir}/train.csv"):
+        return dataset_dir
+
+    with open(f"{dataset_dir}/train.csv", "wb+") as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
+    return dataset_dir
 
 
 def download_dataset_backend(dataset_dir: str, projectID: str):

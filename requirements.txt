@@ -45,3 +45,5 @@ shap==0.46.0
 label-studio-sdk==1.0.4
 flask==3.0.3
 isort
+tensorrt
+onnxruntime-gpu

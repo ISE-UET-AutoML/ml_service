@@ -20,6 +20,7 @@ import shutil
 import numpy as np
 from time import time
 from .ExplainRequest import TextExplainRequest
+from pydantic import Field
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -154,16 +155,20 @@ async def img_explain(
     description="Only use in dev and testing, not for production",
 )
 async def text_explain(
-    userEmail: str = Form(...),
-    projectName: str = Form(...),
+    userEmail: str = Form("darklord1611"),
+    projectName: str = Form("66bdc72c8197a434278f525d"),
     runName: str = Form("ISE"),
-    text: str = Form(...),
+    text: str = Form("The quick brown fox jumps over the lazy dog"),
 ):
 
     # print(request.userEmail)
     # print(request.projectName)
     # print("Run Name:", request.runName)
     # print(request.text)
+
+    print(userEmail)
+    print(projectName)
+    print(text)
 
     start_time = time()
     try:

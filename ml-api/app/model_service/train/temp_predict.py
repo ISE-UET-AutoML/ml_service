@@ -19,6 +19,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import uuid
+from typing import Annotated
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -290,27 +291,51 @@ async def img_seg_predict(
     description="Only use in dev and testing, not for production",
 )
 async def text_predict(
-    userEmail: str = Form("test-automl"),
-    projectName: str = Form("text-classify"),
+    userEmail: str = Form("darklord1611"),
+    projectName: str = Form("66bdc72c8197a434278f525d"),
     runName: str = Form("ISE"),
     text_col: str = Form(
         "sentence", description="name of the text column in train.csv file"
     ),
-    text: str = Form(...),
+    csv_file: UploadFile = File(...),
 ):
     print(userEmail)
     print("Run Name:", runName)
+    print("File:" , csv_file.filename)
+
     try:
+        if csv_file:
+            temp_csv_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.csv"
+            with open(temp_csv_path, "wb") as buffer:
+                buffer.write(await csv_file.read())
+
         start_load = perf_counter()
         # TODO : Load model with any path
         model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        predictions = model.predict({text_col: [text]})
+        
+        try:
+            pd_df = pd.read_csv(temp_csv_path)
+        except Exception as e:
+            return {
+                "status": "failed",
+                "message": "bad request, maybe check your csv file",
+            }
+        
+        predictions = []
+
+        probabilites = model.predict_proba({text_col: pd_df[text_col].values})
+        for prob in probabilites:
+            predictions.append({
+                "class": str(model.class_labels[np.argmax(prob)]),
+                "confidence": round(float(max(prob)), 2)
+            })
         np.set_printoptions(threshold=np.inf)
 
         try:
-            proba: pandas.DataFrame = model.predict_proba({text_col: [text]})
+            # proba: pandas.DataFrame = model.predict_proba({text_col: [text]})
+            pass
         except Exception as e:
             return {
                 "status": "success",
@@ -325,9 +350,9 @@ async def text_predict(
             "status": "success",
             "message": "Prediction completed",
             "load_time": load_time,
-            "proba": str(proba),
+            "proba": "temp",
             "inference_time": perf_counter() - inference_start,
-            "predictions": str(predictions),
+            "predictions": predictions,
         }
     except Exception as e:
         print(e)

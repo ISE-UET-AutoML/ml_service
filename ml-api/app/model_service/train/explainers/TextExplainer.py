@@ -34,7 +34,7 @@ class TextExplainer(BaseExplainer):
     def explain(self, instance):
         data = self.preprocess(instance)
         if self.method == "shap":
-            shap_values = self.explainer(data['sentence'][0:1], max_evals=50, batch_size=10)
+            shap_values = self.explainer(data['sentence'][0:1], max_evals=100, batch_size=20)
             return shap.plots.text(shap_values, display=False)
         else:
             return "Method not supported"

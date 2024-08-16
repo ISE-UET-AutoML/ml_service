@@ -5,7 +5,6 @@ from tkinter import Label
 from turtle import title
 from urllib import response
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from flask import request
 from httpx import head
 import pandas
 import requests

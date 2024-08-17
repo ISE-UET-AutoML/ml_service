@@ -62,7 +62,7 @@ async def train_text_prediction(request: SimpleTrainRequest):
         "runName": request.runName,
         "presets": request.presets,
         "dataset_url": f"{BACKEND_HOST}/media/upload/{request.projectId}/train.csv",
-        "dataset_download_method": "csv-url",
+        "dataset_download_method": "text-backend",
         "label_column": "label",
         "training_argument": {
             "ag_fit_args": {

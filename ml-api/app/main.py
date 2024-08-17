@@ -2,7 +2,6 @@ import signal
 import os, sys
 
 from fastapi.responses import FileResponse
-# from traitlets import default
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

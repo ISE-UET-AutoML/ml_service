@@ -1,5 +1,7 @@
 from math import e
 from celery import Task
+import celery
+import celery.exceptions
 from cv2 import exp
 from settings.config import BACKEND_HOST, ACCESS_TOKEN
 import requests
@@ -10,7 +12,7 @@ class BaseTrainTask(Task):
         if self.request.delivery_info.get("redelivered"):
             print("Task was redelivered")
             raise celery.exceptions.Reject("Task was redilivered")
-            
+
     def on_success(self, retval, task_id, args, kwargs):
         """
         retval – The return value of the task.

@@ -253,7 +253,7 @@ def download_dataset_backend_text(dataset_dir: str, projectID: str):
 
     data = res.json()
 
-    cutoff = 50
+    cutoff = 100
     pages = data["pagination"]["total_page"]
     pages = min(pages, cutoff)
 

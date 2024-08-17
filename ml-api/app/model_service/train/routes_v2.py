@@ -70,7 +70,7 @@ async def train_text_prediction(request: SimpleTrainRequest):
                     "env.per_gpu_batch_size": 4,
                     "env.batch_size": 4,
                     "optimization.efficient_finetune": "lora",
-                    "optimization.log_every_n_steps": 2,
+                    "optimization.log_every_n_steps": 24,
                 },
             },
         },

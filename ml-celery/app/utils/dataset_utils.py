@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from networkx import project
+# from networkx import project
 import pandas
 import splitfolders
 import shutil

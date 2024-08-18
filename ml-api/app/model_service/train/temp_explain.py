@@ -60,9 +60,13 @@ def load_timeseries_model_from_path(model_path: str) -> TimeSeriesPredictor:
 async def load_model(
     user_name: str, project_name: str, run_name: str
 ) -> MultiModalPredictor:
-    model_path = find_latest_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
-    )
+    if run_name == "ISE":
+        model_path = find_latest_model(
+            f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+        )
+    else:
+        model_path = f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/ISE/{run_name}/model.ckpt"
+
     print("model path: ", model_path)
     return load_model_from_path(model_path)
 
@@ -85,7 +89,6 @@ async def load_tabular_model(
     )
     print("model path: ", model_path)
     return load_tabular_model_from_path(model_path)
-
 
 
 # image explain
@@ -122,13 +125,20 @@ async def img_explain(
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
 
-        explainer = ImageExplainer("lime", model, temp_directory_path, num_samples=100, batch_size=50, class_names=[label for label in model.class_labels])
+        explainer = ImageExplainer(
+            "lime",
+            model,
+            temp_directory_path,
+            num_samples=100,
+            batch_size=50,
+            class_names=[label for label in model.class_labels],
+        )
         try:
             explainer.explain(temp_image_path, temp_explain_image_path)
             # TODO: change return format, base64 string usually very slow
             with open(temp_explain_image_path, "rb") as image_file:
-                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
-            
+                encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
         except Exception as e:
             print(e)
 
@@ -145,7 +155,6 @@ async def img_explain(
         print("Cleaning up")
         if os.path.exists(temp_directory_path):
             shutil.rmtree(temp_directory_path)
-
 
 
 # text explain
@@ -178,7 +187,9 @@ async def text_explain(
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
 
-        explainer = TextExplainer("shap", model, class_names=[label for label in model.class_labels])
+        explainer = TextExplainer(
+            "shap", model, class_names=[label for label in model.class_labels]
+        )
         try:
             explain_html = explainer.explain(text)
         except Exception as e:

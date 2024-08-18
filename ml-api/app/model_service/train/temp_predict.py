@@ -59,9 +59,13 @@ def load_timeseries_model_from_path(model_path: str) -> TimeSeriesPredictor:
 async def load_model(
     user_name: str, project_name: str, run_name: str
 ) -> MultiModalPredictor:
-    model_path = find_latest_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
-    )
+    if run_name == "ISE":
+        model_path = find_latest_model(
+            f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+        )
+    else:
+        model_path = f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/ISE/{run_name}/model.ckpt"
+
     print("model path: ", model_path)
     return load_model_from_path(model_path)
 
@@ -84,6 +88,7 @@ async def load_tabular_model(
     )
     print("model path: ", model_path)
     return load_tabular_model_from_path(model_path)
+
 
 # image predict
 @router.post(
@@ -110,24 +115,26 @@ async def img_class_predict(
         for image in files:
             temp_image_path = f"{temp_image_folder}/{image.filename}"
             with open(temp_image_path, "wb") as buffer:
-                buffer.write(await image.read())    
-            temp_image_df = temp_image_df._append({"image": temp_image_path}, ignore_index=True)
-        
+                buffer.write(await image.read())
+            temp_image_df = temp_image_df._append(
+                {"image": temp_image_path}, ignore_index=True
+            )
+
         start_load = perf_counter()
         # TODO : Load model with any path
         model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        probas = model.predict_proba(
-            temp_image_df, as_pandas=False, as_multiclass=True
-        )
+        probas = model.predict_proba(temp_image_df, as_pandas=False, as_multiclass=True)
 
         for proba in probas:
-            predictions.append({
-                "key": str(uuid.uuid4()),
-                "class": str(model.class_labels[np.argmax(proba)]),
-                "confidence": round(float(max(proba)), 2)
-            })
+            predictions.append(
+                {
+                    "key": str(uuid.uuid4()),
+                    "class": str(model.class_labels[np.argmax(proba)]),
+                    "confidence": round(float(max(proba)), 2),
+                }
+            )
 
         return {
             "status": "success",
@@ -141,7 +148,6 @@ async def img_class_predict(
     finally:
         if os.path.exists(temp_image_folder):
             shutil.rmtree(temp_image_folder)
-
 
 
 @router.post(
@@ -301,7 +307,7 @@ async def text_predict(
 ):
     print(userEmail)
     print("Run Name:", runName)
-    print("File:" , csv_file.filename)
+    print("File:", csv_file.filename)
 
     try:
         if csv_file:
@@ -314,7 +320,7 @@ async def text_predict(
         model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        
+
         try:
             pd_df = pd.read_csv(temp_csv_path)
         except Exception as e:
@@ -322,15 +328,17 @@ async def text_predict(
                 "status": "failed",
                 "message": "bad request, maybe check your csv file",
             }
-        
+
         predictions = []
 
         probabilites = model.predict_proba({text_col: pd_df[text_col].values})
         for prob in probabilites:
-            predictions.append({
-                "class": str(model.class_labels[np.argmax(prob)]),
-                "confidence": round(float(max(prob)), 2)
-            })
+            predictions.append(
+                {
+                    "class": str(model.class_labels[np.argmax(prob)]),
+                    "confidence": round(float(max(prob)), 2),
+                }
+            )
         np.set_printoptions(threshold=np.inf)
 
         try:
@@ -531,8 +539,3 @@ async def time_series_predict(
             }
     except Exception as e:
         print(e)
-
-
-
-
-

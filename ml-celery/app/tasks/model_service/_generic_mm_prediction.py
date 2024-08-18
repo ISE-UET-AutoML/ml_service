@@ -48,7 +48,7 @@ def train(task_id: str, request: dict):
         # test_path = find_in_current_dir(
         #     "test", user_dataset_path, is_pattern=True, extension=".csv"
         # )
-        train_path = f"{user_dataset_path}/{train_path}"
+        train_path = f"{user_dataset_path}{train_path}"
         # if val_path is not None:
         #     val_path = f"{user_dataset_path}/{val_path}"
         # test_path = f"{user_dataset_path}/{test_path}"

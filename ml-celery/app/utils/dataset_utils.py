@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-# from networkx import project
 import pandas
 import splitfolders
 import shutil
@@ -253,7 +252,10 @@ def download_dataset_backend_text(dataset_dir: str, projectID: str):
         raise ValueError("Error in downloading dataset")
 
     data = res.json()
+
+    cutoff = 100
     pages = data["pagination"]["total_page"]
+    pages = min(pages, cutoff)
 
     train_data = []
     for page in range(pages):
@@ -271,7 +273,7 @@ def download_dataset_backend_text(dataset_dir: str, projectID: str):
             train_data.append({"text": text, "label": label})
 
     df = pandas.DataFrame.from_dict(train_data)
-    df.to_csv(f"{dataset_dir}data.csv", index=False)
+    df.to_csv(f"{dataset_dir}train.csv", index=False)
 
     # print(data)
     return dataset_dir

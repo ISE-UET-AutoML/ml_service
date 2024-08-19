@@ -332,13 +332,12 @@ async def text_predict(
         predictions = []
 
         probabilites = model.predict_proba({text_col: pd_df[text_col].values})
-        for prob in probabilites:
-            predictions.append(
-                {
-                    "class": str(model.class_labels[np.argmax(prob)]),
-                    "confidence": round(float(max(prob)), 2),
-                }
-            )
+        for i, prob in enumerate(probabilites):
+            predictions.append({
+                "sentence": pd_df[text_col].values[i],
+                "class": str(model.class_labels[np.argmax(prob)]),
+                "confidence": round(float(max(prob)), 2)
+            })
         np.set_printoptions(threshold=np.inf)
 
         try:

@@ -23,18 +23,18 @@ class TextExplainer(BaseExplainer):
 
     def preprocess(self, instance):
         if self.method == "shap":
-            return pd.DataFrame([instance], columns=['sentence'])
+            return pd.DataFrame([instance], columns=['text'])
 
     def predict_proba(self, instances):
         sentences = []
         for instance in instances:
             sentences.append(instance)
-        return self.model.predict_proba({'sentence': sentences}, realtime=True)
+        return self.model.predict_proba({'text': sentences}, realtime=True)
 
     def explain(self, instance):
         data = self.preprocess(instance)
         if self.method == "shap":
-            shap_values = self.explainer(data['sentence'][0:1], max_evals=100, batch_size=20)
+            shap_values = self.explainer(data['text'][0:1], max_evals=100, batch_size=20)
             return shap.plots.text(shap_values, display=False)
         else:
             return "Method not supported"

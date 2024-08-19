@@ -301,7 +301,7 @@ async def text_predict(
     projectName: str = Form("66bdc72c8197a434278f525d"),
     runName: str = Form("ISE"),
     text_col: str = Form(
-        "sentence", description="name of the text column in train.csv file"
+        "text", description="name of the text column in train.csv file"
     ),
     csv_file: UploadFile = File(...),
 ):
@@ -331,10 +331,11 @@ async def text_predict(
 
         predictions = []
 
-        probabilites = model.predict_proba({text_col: pd_df[text_col].values})
-        for prob in probabilites:
+        probabilites = model.predict_proba({'text': pd_df[text_col].values})
+        for i, prob in enumerate(probabilites):
             predictions.append(
                 {
+                    "sentence": pd_df[text_col].values[i],
                     "class": str(model.class_labels[np.argmax(prob)]),
                     "confidence": round(float(max(prob)), 2),
                 }

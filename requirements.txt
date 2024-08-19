@@ -46,3 +46,4 @@ flask==3.0.3
 isort
 tensorrt
 onnxruntime-gpu
+nltk

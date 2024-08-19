@@ -188,10 +188,11 @@ async def text_explain(
         inference_start = perf_counter()
 
         explainer = TextExplainer(
-            "shap", model, class_names=[label for label in model.class_labels]
+            "lime", model, class_names=[label for label in model.class_labels]
         )
         try:
             explain_html = explainer.explain(text)
+            print(type(explain_html))
         except Exception as e:
             print(e)
 

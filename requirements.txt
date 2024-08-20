@@ -30,7 +30,6 @@ requests~=2.31.0
 tabpfn~=0.1.10
 optuna~=3.5.0
 
-
 gunicorn==20.1.0
 python-multipart==0.0.5
 configparser==5.0.2
@@ -47,3 +46,5 @@ flask==3.0.3
 isort
 tensorrt
 onnxruntime-gpu
+nltk
+contractions

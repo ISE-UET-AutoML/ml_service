@@ -1,6 +1,5 @@
 import os
 import uuid
-from isort import file
 from settings.config import HOST, PORT
 
 

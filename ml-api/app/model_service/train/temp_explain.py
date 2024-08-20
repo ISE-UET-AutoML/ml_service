@@ -188,10 +188,10 @@ async def text_explain(
         inference_start = perf_counter()
 
         explainer = TextExplainer(
-            "shap", model, class_names=[label for label in model.class_labels]
+            "lime", model, class_names=[label for label in model.class_labels]
         )
         try:
-            explain_html = explainer.explain(text)
+            explanations = explainer.explain(text)
         except Exception as e:
             print(e)
 
@@ -200,7 +200,7 @@ async def text_explain(
             "message": "Explanation completed",
             "load_time": load_time,
             "inference_time": perf_counter() - inference_start,
-            "explain_html": explain_html,
+            "explanations": explanations,
         }
     except Exception as e:
         print(e)

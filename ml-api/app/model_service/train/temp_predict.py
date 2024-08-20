@@ -301,7 +301,7 @@ async def text_predict(
     projectName: str = Form("66bdc72c8197a434278f525d"),
     runName: str = Form("ISE"),
     text_col: str = Form(
-        "text", description="name of the text column in train.csv file"
+        "sentence", description="name of the text column in train.csv file"
     ),
     csv_file: UploadFile = File(...),
 ):

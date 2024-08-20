@@ -12,6 +12,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 # Download stopwords if you haven't already
 import nltk
+import contractions
 
 class TextExplainer(BaseExplainer):
     def __init__(self, method="shap", model=None, class_names=None):
@@ -34,6 +35,10 @@ class TextExplainer(BaseExplainer):
         if self.method == "shap":
             return pd.DataFrame([instance], columns=['sentence'])
         elif self.method == "lime":
+            # expand contractions
+            instance = contractions.fix(instance)
+            
+            print(instance)
             # Tokenize the text
             words = word_tokenize(instance)
             
@@ -47,7 +52,6 @@ class TextExplainer(BaseExplainer):
         if self.method == "lime":
             res = []
             for i in range(len(self.class_names)):
-                print(instance.as_list(label=i))
                 words_score = instance.as_list(label=i)
                 positive_score_words = [word for word, score in words_score if score > 0][:5]
                 res.append({'class': int(self.class_names[i]), 'words': positive_score_words})

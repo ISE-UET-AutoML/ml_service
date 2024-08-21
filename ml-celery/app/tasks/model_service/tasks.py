@@ -53,6 +53,7 @@ def object_detection_train(self, request: dict):
 @shared_task(
     bind=True,
     name="model_service.generic_mm_prediction.train",
+    base=BaseTrainTask,
 )
 def generic_mm_prediction_train(self, request: dict):
     return _generic_mm_prediction.train(self.request.id, request)

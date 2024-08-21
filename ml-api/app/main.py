@@ -1,7 +1,7 @@
 import signal
 import os, sys
 
-from traitlets import default
+from fastapi.responses import FileResponse
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -11,18 +11,21 @@ from fastapi import FastAPI, Form
 from settings.config import celery_client
 
 from model_service.routes import router as model_service_router
+from label_service.routes import router as label_service_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(debug=True)
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:8673",
+    "http://localhost:8674",
+    "http://localhost:8675",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -59,6 +62,16 @@ app.include_router(
     model_service_router,
     prefix="/model_service",  # tags=["model_service"]
 )
+
+app.include_router(
+    label_service_router, prefix="/label_service", tags=["label_service"]
+)
+
+
+@app.get("/public/media/{file_path}")
+def read_file(file_path: str):
+    return FileResponse(f"./public/media/{file_path}")
+
 
 if __name__ == "__main__":
     import uvicorn

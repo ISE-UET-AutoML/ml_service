@@ -64,3 +64,17 @@ BACKEND = cfg["backend"]
 BACKEND_HOST = BACKEND["host"]
 ACCESS_TOKEN = BACKEND["ACCESS_TOKEN_SECRET"]
 REFRESH_TOKEN = BACKEND["REFRESH_TOKEN_SECRET"]
+
+# =========================================================================
+#                          LABEL STUDIO INFORMATION
+# =========================================================================
+LABEL_STUDIO = cfg["label_studio"]
+LABEL_STUDIO_HOST = LABEL_STUDIO["host"]
+LABEL_STUDIO_ACCESS_TOKEN = LABEL_STUDIO["ACCESS_TOKEN"]
+
+from label_studio_sdk.client import LabelStudio
+
+label_studio_client = LabelStudio(
+    base_url=LABEL_STUDIO_HOST, api_key=LABEL_STUDIO_ACCESS_TOKEN
+)
+

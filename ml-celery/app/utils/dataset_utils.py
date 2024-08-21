@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import pandas
 import splitfolders
 import shutil
 import glob
@@ -137,6 +138,12 @@ def download_dataset(
         return download_dataset_gdrive(dataset_dir, is_zip, request["dataset_url"])
     if method == "backend":
         return download_dataset_backend(dataset_dir, projectID=request["projectName"])
+    if method == "text-backend":
+        return download_dataset_backend_text(
+            dataset_dir, projectID=request["projectName"]
+        )
+    if method == "csv-url":
+        return download_dataset_csv_url(dataset_dir, request["dataset_url"])
 
 
 def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
@@ -179,6 +186,18 @@ def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
                 return dataset_dir
 
 
+def download_dataset_csv_url(dataset_dir: str, url: str):
+    r = requests.get(url)
+    print(f"Downloading dataset from {url}")
+    if os.path.exists(f"{dataset_dir}/train.csv"):
+        return dataset_dir
+
+    with open(f"{dataset_dir}train.csv", "wb+") as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
+    return dataset_dir
+
+
 def download_dataset_backend(dataset_dir: str, projectID: str):
 
     if os.path.exists(f"{dataset_dir}data_ok.txt"):  # if data is already downloaded
@@ -215,6 +234,46 @@ def download_dataset_backend(dataset_dir: str, projectID: str):
                 print("Image downloaded: ", f"{dataset_dir}{label}/{name}")
             except Exception as e:
                 print(e)
+
+    # print(data)
+    return dataset_dir
+
+
+def download_dataset_backend_text(dataset_dir: str, projectID: str):
+    if os.path.exists(f"{dataset_dir}data_ok.txt"):  # if data is already downloaded
+        return dataset_dir
+    os.makedirs(dataset_dir, exist_ok=True)
+    with open(f"{dataset_dir}data_ok.txt", "w+") as f:
+        f.write("ok")
+
+    dataset_url = f"{BACKEND_HOST}/projects/{projectID}/datasets"
+    res = requests.get(dataset_url, cookies={"accessToken": ACCESS_TOKEN})
+    if res.status_code != 200:
+        raise ValueError("Error in downloading dataset")
+
+    data = res.json()
+
+    cutoff = 100
+    pages = data["pagination"]["total_page"]
+    pages = min(pages, cutoff)
+
+    train_data = []
+    for page in range(pages):
+        if page != 0:
+            res = requests.get(
+                dataset_url + f"?page={page+1}", cookies={"accessToken": ACCESS_TOKEN}
+            )
+            data = res.json()
+
+        for image_file in data["files"]:
+            # name = f"{image_file['_id']}.jpg"
+            label = image_file["label"]
+            text = image_file["url"]
+
+            train_data.append({"text": text, "label": label})
+
+    df = pandas.DataFrame.from_dict(train_data)
+    df.to_csv(f"{dataset_dir}train.csv", index=False)
 
     # print(data)
     return dataset_dir

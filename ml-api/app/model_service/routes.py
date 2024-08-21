@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from re import sub
+import shutil
 import subprocess
 import celery
 from fastapi import APIRouter, Form
@@ -10,6 +11,7 @@ from .train.routes_v1 import router as train_router
 from .train.routes_v2 import router as train_router_v2
 from .autogluon_zeroshot.routes import router as zeroshot_router
 from settings.config import (
+    TEMP_DIR,
     celery_client,
     redis_client,
     BACKEND_HOST,
@@ -50,16 +52,23 @@ def result(task_id):
     return {"status": status, "result": ""}
 
 
-from requests.auth import HTTPBasicAuth
+@router.post("/delete_project")
+def delete_project(user_name: str = Form("test-automl"), project_id: str = Form(...)):
+    path = f"{TEMP_DIR}/{user_name}/{project_id}"
+    if os.path.exists(path):
+        shutil.rmtree(path)
+        return {"message": "SUCCESS"}
+    return {"message": "project not found"}
 
 
-@router.post("/getdataset")
-def get_be_dataset(
-    projectID: str = Form(...),
+@router.post("/delete_experiment")
+def delete_run(
+    user_name: str = Form("test-automl"),
+    project_id: str = Form(...),
+    experiment_name: str = Form(...),
 ):
-    # ${BACKENDHOST}/projects/${projectID}/datasets
-    dataset_url = f"{BACKEND_HOST}/projects/{projectID}/datasets"
-
-    temp = requests.get(dataset_url, cookies={"accessToken": ACCESS_TOKEN})
-
-    print(temp.text)
+    path = f"{TEMP_DIR}/{user_name}/{project_id}/trained_models/ISE/{experiment_name}"
+    if os.path.exists(path):
+        shutil.rmtree(path)
+        return {"message": "SUCCESS"}
+    return {"message": "experiment not found"}

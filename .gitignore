@@ -175,3 +175,9 @@ service-account.json
 ml-api/testing/
 
 /example
+
+mydata/
+
+public/
+
+docker-compose.yml

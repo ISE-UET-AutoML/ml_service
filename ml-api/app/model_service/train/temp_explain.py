@@ -5,7 +5,7 @@ import re
 from typing import Optional, Union
 from urllib import response
 from zipfile import ZipFile
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile, Body
 import pandas
 from sympy import false, use
 from time import perf_counter
@@ -13,10 +13,14 @@ from autogluon.multimodal import MultiModalPredictor
 from autogluon.tabular import TabularPredictor
 from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
+from .explainers.TextExplainer import TextExplainer
 import joblib
 from settings.config import TEMP_DIR
 import shutil
 import numpy as np
+from time import time
+from .ExplainRequest import TextExplainRequest
+from pydantic import Field
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -56,9 +60,13 @@ def load_timeseries_model_from_path(model_path: str) -> TimeSeriesPredictor:
 async def load_model(
     user_name: str, project_name: str, run_name: str
 ) -> MultiModalPredictor:
-    model_path = find_latest_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
-    )
+    if run_name == "ISE":
+        model_path = find_latest_model(
+            f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+        )
+    else:
+        model_path = f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/ISE/{run_name}/model.ckpt"
+
     print("model path: ", model_path)
     return load_model_from_path(model_path)
 
@@ -83,7 +91,6 @@ async def load_tabular_model(
     return load_tabular_model_from_path(model_path)
 
 
-
 # image explain
 @router.post(
     "/image_classification/explain",
@@ -96,9 +103,9 @@ async def img_explain(
     runName: str = Form("ISE"),
     image: UploadFile = File(...),
 ):
-    print(userEmail)
-    print(projectName)
-    print("Run Name:", runName)
+    # print(userEmail)
+    # print(projectName)
+    # print("Run Name:", runName)
     try:
         # write the image to a temporary file
         temp_image_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.jpg"
@@ -118,17 +125,22 @@ async def img_explain(
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
 
-        explainer = ImageExplainer("lime", model, temp_directory_path, num_samples=100, batch_size=100, class_names=[label for label in model.class_labels])
+        explainer = ImageExplainer(
+            "lime",
+            model,
+            temp_directory_path,
+            num_samples=100,
+            batch_size=50,
+            class_names=[label for label in model.class_labels],
+        )
         try:
-            explain_image_path = explainer.explain(temp_image_path, temp_explain_image_path)
-            encoded_image = ""
-            with open(explain_image_path, "rb") as image_file:
-                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
-            
+            explainer.explain(temp_image_path, temp_explain_image_path)
+            # TODO: change return format, base64 string usually very slow
+            with open(temp_explain_image_path, "rb") as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
         except Exception as e:
             print(e)
-
-        print(type(model.class_labels))
 
         return {
             "status": "success",
@@ -140,5 +152,58 @@ async def img_explain(
     except Exception as e:
         print(e)
     finally:
+        print("Cleaning up")
         if os.path.exists(temp_directory_path):
             shutil.rmtree(temp_directory_path)
+
+
+# text explain
+@router.post(
+    "/text_prediction/explain",
+    tags=["text_prediction"],
+    description="Only use in dev and testing, not for production",
+)
+async def text_explain(
+    userEmail: str = Form("darklord1611"),
+    projectName: str = Form("66bdc72c8197a434278f525d"),
+    runName: str = Form("ISE"),
+    text: str = Form("The quick brown fox jumps over the lazy dog"),
+):
+
+    # print(request.userEmail)
+    # print(request.projectName)
+    # print("Run Name:", request.runName)
+    # print(request.text)
+
+    print(userEmail)
+    print(projectName)
+    print(text)
+
+    start_time = time()
+    try:
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+
+        explainer = TextExplainer(
+            "lime", model, class_names=[label for label in model.class_labels]
+        )
+        try:
+            explanations = explainer.explain(text)
+        except Exception as e:
+            print(e)
+
+        return {
+            "status": "success",
+            "message": "Explanation completed",
+            "load_time": load_time,
+            "inference_time": perf_counter() - inference_start,
+            "explanations": explanations,
+        }
+    except Exception as e:
+        print(e)
+    finally:
+        print(f"Eplapsed time: {time() - start_time}")
+        pass

@@ -67,12 +67,9 @@ class TextExplainer(BaseExplainer):
             res = []
             for i in range(len(self.class_names)):
                 words_score = instance.as_list(label=i)
-                positive_score_words = [
-                    word for word, score in words_score if score > 0
-                ][:5]
-                res.append(
-                    {"class": int(self.class_names[i]), "words": positive_score_words}
-                )
+                print(words_score)
+                positive_score_words = [word for word, score in words_score if score > 0][:5]
+                res.append({'class': str(self.class_names[i]), 'words': positive_score_words})
             return res
         else:
             return "Method not supported"

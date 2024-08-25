@@ -301,7 +301,7 @@ async def text_predict(
     projectName: str = Form("66bdc72c8197a434278f525d"),
     runName: str = Form("ISE"),
     text_col: str = Form(
-        "sentence", description="name of the text column in train.csv file"
+        "text", description="name of the text column in train.csv file"
     ),
     csv_file: UploadFile = File(...),
 ):
@@ -323,6 +323,12 @@ async def text_predict(
 
         try:
             pd_df = pd.read_csv(temp_csv_path)
+            for col in pd_df.columns:
+                if col.lower().__contains__("text") or col.lower().__contains__(
+                    "sentence"
+                ):
+                    text_col = col
+                    break
         except Exception as e:
             return {
                 "status": "failed",
@@ -331,7 +337,7 @@ async def text_predict(
 
         predictions = []
 
-        probabilites = model.predict_proba({'text': pd_df[text_col].values})
+        probabilites = model.predict_proba({"text": pd_df[text_col].values})
         for i, prob in enumerate(probabilites):
             predictions.append(
                 {

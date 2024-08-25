@@ -188,6 +188,8 @@ class AutogluonTrainer(object):
                 **self.fit_args,
             )
 
+            # predictor.optimize_for_inference()
+
             print(predictor.eval_metric)
 
             self._logger.info(f"Training completed. Model saved to {model_path}")

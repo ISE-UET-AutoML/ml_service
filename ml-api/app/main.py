@@ -11,7 +11,6 @@ from fastapi import FastAPI, Form
 from settings.config import celery_client
 
 from model_service.routes import router as model_service_router
-from label_service.routes import router as label_service_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(debug=True)
@@ -62,10 +61,6 @@ def terminate_task(task_id: str = Form(default=""), sig: str = Form(default="SIG
 app.include_router(
     model_service_router,
     prefix="/model_service",  # tags=["model_service"]
-)
-
-app.include_router(
-    label_service_router, prefix="/label_service", tags=["label_service"]
 )
 
 

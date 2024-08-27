@@ -181,18 +181,21 @@ class AutogluonTrainer(object):
 
             logging.basicConfig(level=logging.DEBUG)
 
+            train_data = pd.read_csv(train_data_path)
+
             predictor.fit(
-                train_data=pd.read_csv(train_data_path),
+                train_data=train_data,
                 tuning_data=str(val_data_path),
                 save_path=str(model_path),
                 **self.fit_args,
             )
 
-            # predictor.optimize_for_inference()
+            exported_path = predictor.export_onnx(data=train_data[0:1], path=str(model_path), batch_size=4, truncate_long_and_double=True)
 
             print(predictor.eval_metric)
 
             self._logger.info(f"Training completed. Model saved to {model_path}")
+            self._logger.info(f"Export completed. Model saved to {exported_path}")
             return predictor
         except ValueError as ve:
             self._logger.error(f"Value Error: {ve}")

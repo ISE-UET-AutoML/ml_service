@@ -92,10 +92,14 @@ def train(task_id: str, request: dict):
             ],
         )
 
+        exported_path = predictor.export_onnx(data=train_data[0:1], path=user_model_path, truncate_long_and_double=True)
+
         # metrics = predictor.evaluate(test_data, metrics=request["metrics"])
         # print("Training model successfully")
 
         end = perf_counter()
+        
+        print(f"Training completed. Model save to {exported_path}")
 
         return {
             "metrics": "temp_metrics",

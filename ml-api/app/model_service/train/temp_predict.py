@@ -1,3 +1,4 @@
+import asyncio
 import base64
 from email.mime import image
 from io import StringIO
@@ -5,6 +6,8 @@ import re
 from typing import Optional, Union
 from urllib import response
 from zipfile import ZipFile
+
+import requests
 from fastapi import APIRouter, File, Form, UploadFile
 import pandas
 from sympy import false, use
@@ -90,6 +93,12 @@ async def load_tabular_model(
     return load_tabular_model_from_path(model_path)
 
 
+async def save_image(image, temp_image_folder):
+    temp_image_path = f"{temp_image_folder}/{image.filename}"
+    with open(temp_image_path, "wb") as buffer:
+        buffer.write(await image.read())
+    return "." + temp_image_path
+
 # image predict
 @router.post(
     "/image_classification/temp_predict",
@@ -97,9 +106,9 @@ async def load_tabular_model(
     description="Only use in dev and testing, not for production",
 )
 async def img_class_predict(
-    userEmail: str = Form("test-automl"),
-    projectName: str = Form("4-animal"),
-    runName: str = Form("ISE"),
+    userEmail: str = Form("darklord1611"),
+    projectName: str = Form("66cd1be6170fa7d38a83c650"),
+    runName: str = Form("054f3acc-a0ce-4daa-8c59-c089927b6b3d"),
     files: list[UploadFile] = File(...),
 ):
     print(userEmail)
@@ -107,31 +116,60 @@ async def img_class_predict(
 
     try:
         predictions = []
-        # write the image to a temporary file
+        # write the image to a temporary folder
         temp_image_folder = f"{TEMP_DIR}/{userEmail}/{projectName}/temp_predict"
         os.makedirs(temp_image_folder, exist_ok=True)
 
-        temp_image_df = pd.DataFrame(columns=["image"])
-        for image in files:
-            temp_image_path = f"{temp_image_folder}/{image.filename}"
-            with open(temp_image_path, "wb") as buffer:
-                buffer.write(await image.read())
-            temp_image_df = temp_image_df._append(
-                {"image": temp_image_path}, ignore_index=True
-            )
+        image_paths = []
 
+
+        # OLD WAYS
+        # temp_image_df = pd.DataFrame(columns=["image"])
+        # for image in files:
+        #     temp_image_path = f"{temp_image_folder}/{image.filename}"
+
+        #     image_paths.append("." + temp_image_path)
+        #     with open(temp_image_path, "wb") as buffer:
+        #         buffer.write(await image.read())
+        #     temp_image_df = temp_image_df._append(
+        #         {"image": temp_image_path}, ignore_index=True
+        #     )
+        # start_load = perf_counter()
+        # # TODO : Load model with any path
+        # model = await load_model(userEmail, projectName, runName)
+        # load_time = perf_counter() - start_load 
+        # inference_start = perf_counter()
+        # probas = model.predict_proba(temp_image_df, as_pandas=False, as_multiclass=True)
+
+        # NEW WAYS
         start_load = perf_counter()
-        # TODO : Load model with any path
-        model = await load_model(userEmail, projectName, runName)
-        load_time = perf_counter() - start_load
-        inference_start = perf_counter()
-        probas = model.predict_proba(temp_image_df, as_pandas=False, as_multiclass=True)
+        tasks = []
 
+        for image in files:
+            tasks.append(save_image(image, temp_image_folder))
+        # Wait for all images to be saved
+        image_paths = await asyncio.gather(*tasks)
+        load_time = perf_counter() - start_load
+        json = {
+            "userEmail": userEmail,
+            "projectName": projectName,
+            "runName": runName,
+            "images": image_paths   
+        }
+        inference_start = perf_counter()
+        try:
+            probas = requests.post('http://localhost:8684/image_classification/predict', json=json).json()
+        except Exception as e:
+            print(e)
+            return {"status": "failed", "message": "Prediction failed"}
+    
+
+        ####### BOTH
         for proba in probas:
             predictions.append(
                 {
                     "key": str(uuid.uuid4()),
-                    "class": str(model.class_labels[np.argmax(proba)]),
+                    "class": str(np.argmax(proba)),
                     "confidence": round(float(max(proba)), 2),
                 }
             )
@@ -145,9 +183,11 @@ async def img_class_predict(
         }
     except Exception as e:
         print(e)
+        return {"status": "failed", "message": "Prediction failed"}
     finally:
-        if os.path.exists(temp_image_folder):
-            shutil.rmtree(temp_image_folder)
+        pass
+        # if os.path.exists(temp_image_folder):
+        #     shutil.rmtree(temp_image_folder)
 
 
 @router.post(

@@ -15,3 +15,10 @@ class ImagePredictionRequest(BaseModel):
     projectName: str = Field(description="Project name")
     runName: str = Field(description="Run name")
     images: List[str] = Field(description="Image file paths")
+
+
+class ImageExplainRequest(BaseModel):
+    userEmail: str = Field(description="User Email")
+    projectName: str = Field(description="Project name")
+    runName: str = Field(description="Run name")
+    image: str = Field(description="Image file path")

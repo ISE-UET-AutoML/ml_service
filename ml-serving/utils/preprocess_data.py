@@ -1,7 +1,10 @@
+from pathlib import Path
 import numpy as np
+import os
 from PIL import Image
 import torchvision.transforms as transforms
 import requests
+from time import time
 
 IMAGE_SIZE = 224
 
@@ -22,17 +25,16 @@ def preprocess_image(data):
 
     def preprocess_image(image_input):
         if isinstance(image_input, str):
-            try:
-                img = Image.open(requests.get(image_input, stream=True).raw)
-            except Exception as e:
-                return None
+            img = Image.open(image_input)
         else:
             img = Image.fromarray(image_input, 'RGB')
         img = transform(img)
         return img
 
-
+    start_time = time()
     images = [preprocess_image(image_input) for image_input in data]
+
+    print(f"Preprocess time: {time() - start_time}")
     image_tensor = np.stack(images)
     valid_nums = np.array([1] * len(images), dtype=np.int64) # Create the timm_image_image_valid_num tensor
     

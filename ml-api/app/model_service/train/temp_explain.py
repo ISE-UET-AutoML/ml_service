@@ -21,6 +21,8 @@ import numpy as np
 from time import time
 from .ExplainRequest import TextExplainRequest
 from pydantic import Field
+import asyncio
+import requests
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -91,6 +93,14 @@ async def load_tabular_model(
     return load_tabular_model_from_path(model_path)
 
 
+
+
+async def save_image(image, temp_image_folder):
+    temp_image_path = f"{temp_image_folder}/{image.filename}"
+    with open(temp_image_path, "wb") as buffer:
+        buffer.write(await image.read())
+    return "." + temp_image_path
+
 # image explain
 @router.post(
     "/image_classification/explain",
@@ -116,32 +126,49 @@ async def img_explain(
         os.makedirs(Path(temp_explain_image_path).parent, exist_ok=True)
         os.makedirs(temp_directory_path, exist_ok=True)
 
-        with open(temp_image_path, "wb") as buffer:
-            buffer.write(await image.read())
 
+        # OLD CODE
+        # with open(temp_image_path, "wb") as buffer:
+        #     buffer.write(await image.read())
+        # start_load = perf_counter()
+        # # TODO : Load model with any path
+        # model = await load_model(userEmail, projectName, runName)
+        # load_time = perf_counter() - start_load
+        # inference_start = perf_counter()
+
+        # explainer = ImageExplainer(
+        #     "lime",
+        #     model,
+        #     temp_directory_path,
+        #     num_samples=100,
+        #     batch_size=50,
+        #     class_names=[label for label in model.class_labels],
+        # )
+        # explainer.explain(temp_image_path, temp_explain_image_path)
+
+        # NEW CODE
+        tasks = []
+        tasks.append(save_image(image, temp_directory_path))
         start_load = perf_counter()
-        # TODO : Load model with any path
-        model = await load_model(userEmail, projectName, runName)
+        image_path = await asyncio.gather(*tasks) # temporary workaround 
         load_time = perf_counter() - start_load
+
+        json = {
+            "method": "lime",
+            "userEmail": userEmail,
+            "projectName": projectName,
+            "runName": runName,
+            "image": image_path[0],
+            "image_explained_path": "." + temp_explain_image_path
+        }
         inference_start = perf_counter()
+        response = requests.post("http://localhost:8684/image_classification/explain", json=json)
+        print(response.json())
+        # END NEW CODE
 
-        explainer = ImageExplainer(
-            "lime",
-            model,
-            temp_directory_path,
-            num_samples=100,
-            batch_size=50,
-            class_names=[label for label in model.class_labels],
-        )
-        try:
-            explainer.explain(temp_image_path, temp_explain_image_path)
-            # TODO: change return format, base64 string usually very slow
-            with open(temp_explain_image_path, "rb") as image_file:
-                encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-
-        except Exception as e:
-            print(e)
-
+        # TODO: change return format, base64 string usually very slow
+        with open(temp_explain_image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
         return {
             "status": "success",
             "message": "Explanation completed",
@@ -151,10 +178,11 @@ async def img_explain(
         }
     except Exception as e:
         print(e)
+        return {"status": "failed", "message": "Explanation failed"}
     finally:
         print("Cleaning up")
-        if os.path.exists(temp_directory_path):
-            shutil.rmtree(temp_directory_path)
+        # if os.path.exists(temp_directory_path):
+        #     shutil.rmtree(temp_directory_path)
 
 
 # text explain

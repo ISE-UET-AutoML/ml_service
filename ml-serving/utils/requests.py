@@ -22,3 +22,5 @@ class ImageExplainRequest(BaseModel):
     projectName: str = Field(description="Project name")
     runName: str = Field(description="Run name")
     image: str = Field(description="Image file path")
+    image_explained_path: str = Field(description="path to store the explained image")
+    method: str = Field(description="Method to explain the image", default="lime")

@@ -11,6 +11,9 @@ from lime import lime_image
 import matplotlib.pyplot as plt
 from skimage.segmentation import mark_boundaries
 from .BaseExplainer import BaseExplainer 
+from utils.preprocess_data import preprocess_image, softmax
+import onnxruntime as ort
+
 # supported methods: LIME, SHAP
 
 
@@ -46,6 +49,13 @@ class ImageExplainer(BaseExplainer):
                 return None
     
     def predict_proba(self, instances):
+        # check if model is onnx
+        if isinstance(self.model, ort.InferenceSession):
+            image_tensor, valid_nums = preprocess_image(instances)
+            _, logits = self.model.run(None, {self.input_names[0]: image_tensor, self.input_names[1]: valid_nums})
+            return softmax(logits)
+        
+        # default autogluon model
         proba_list = []
         data = pd.DataFrame(columns=["image"])
         for i in range(instances.shape[0]):
@@ -63,6 +73,8 @@ class ImageExplainer(BaseExplainer):
         return proba_list
     
 
+
+    # store the explanation in the form of an image with mask
     def explain(self, instance, instance_explain_path):
         image_input = self.preprocess(instance)
         image_explanation = None

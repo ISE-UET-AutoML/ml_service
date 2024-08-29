@@ -11,7 +11,7 @@ from utils.preprocess_data import preprocess_image, softmax
 from time import time
 import onnx
 import onnxruntime as ort
-
+from explainers.ImageExplainer import ImageExplainer
 
 
 
@@ -36,7 +36,7 @@ import onnxruntime as ort
     
     
 )
-class ImageClassificationService:
+class PredictionService:
     def __init__(self) -> None:
         print("Init")
 
@@ -44,7 +44,8 @@ class ImageClassificationService:
     def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str) -> t.Tuple[t.Any, t.List[str]]:
         try:
             self.ort_sess = ort.InferenceSession(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx')
-            self.input_names = [input.name for input in self.ort_sess.get_inputs()]
+            print(type(self.ort_sess))
+            self.input_names = [in_param.name for in_param in self.ort_sess.get_inputs()]
             print("Model deploy successfully")
             return None
         except Exception as e:
@@ -93,18 +94,21 @@ class ImageClassificationService:
         return predictions
     
     @bentoml.api(input_spec=ImageExplainRequest, route="image_classification/explain")
-    def explain(self, **params: t.Any) -> str:
+    def explain(self, **params: t.Any) -> dict:
+
+        if not hasattr(self, 'ort_sess'):
+            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
+            print("Model not preloaded, loading now!")
+
         start_time = time()
         try:
-            image_tensor, valid_nums = preprocess_image(params['image'])
-            _, logits = self.ort_sess.run(None, {self.input_names[0]: image_tensor, self.input_names[1]: valid_nums})
-            predictions = softmax(logits)
-            print(predictions)
+            explainer = ImageExplainer(params['method'], self.ort_sess)
+            explainer.explain(params['image'], params['image_explained_path'])
         except Exception as e:
             print(e)
             print("Prediction failed")
-            return "Prediction failed"
+            return {"status": "failed", "message": "Explanation failed"}
         end_time = time()
         print(f"Time taken: {end_time - start_time}")
 
-        return "success"
+        return {"status": "success"}

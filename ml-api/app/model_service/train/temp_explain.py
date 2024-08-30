@@ -15,7 +15,7 @@ from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 from .explainers.TextExplainer import TextExplainer
 import joblib
-from settings.config import TEMP_DIR
+from settings.config import TEMP_DIR, BENTOML_HOST
 import shutil
 import numpy as np
 from time import time
@@ -162,10 +162,11 @@ async def img_explain(
             "image_explained_path": "." + temp_explain_image_path
         }
         inference_start = perf_counter()
-        response = requests.post("http://localhost:8684/image_classification/explain", json=json)
+        response = requests.post(f"{BENTOML_HOST}/image_classification/explain", json=json)
         print(response.json())
         # END NEW CODE
 
+        inference_time = perf_counter() - inference_start
         # TODO: change return format, base64 string usually very slow
         with open(temp_explain_image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
@@ -173,7 +174,8 @@ async def img_explain(
             "status": "success",
             "message": "Explanation completed",
             "load_time": load_time,
-            "inference_time": perf_counter() - inference_start,
+            "inference_time": inference_time,
+            "encode_time": perf_counter() - inference_time,
             "explain_image": encoded_image,
         }
     except Exception as e:
@@ -192,8 +194,8 @@ async def img_explain(
     description="Only use in dev and testing, not for production",
 )
 async def text_explain(
-    userEmail: str = Form("darklord1611"),
-    projectName: str = Form("66bdc72c8197a434278f525d"),
+    userEmail: str = Form(...),
+    projectName: str = Form(...),
     runName: str = Form("ISE"),
     text: str = Form("The quick brown fox jumps over the lazy dog"),
 ):

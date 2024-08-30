@@ -72,6 +72,13 @@ LABEL_STUDIO = cfg["label_studio"]
 LABEL_STUDIO_HOST = LABEL_STUDIO["host"]
 LABEL_STUDIO_ACCESS_TOKEN = LABEL_STUDIO["ACCESS_TOKEN"]
 
+
+# =========================================================================
+#                           BENTOML INFORMATION
+# =========================================================================
+BENTOML = cfg["bentoml"]
+BENTOML_HOST = BENTOML["host"]
+
 from label_studio_sdk.client import LabelStudio
 
 label_studio_client = LabelStudio(

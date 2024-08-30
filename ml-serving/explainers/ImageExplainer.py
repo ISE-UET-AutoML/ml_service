@@ -20,10 +20,9 @@ import onnxruntime as ort
 IMAGE_SIZE = 256
 
 class ImageExplainer(BaseExplainer):
-    def __init__(self, method="lime", model=None, temp_image_directory_path=None, num_samples=100, batch_size=50, class_names=None):
+    def __init__(self, method="lime", model=None, num_samples=100, batch_size=50, class_names=None):
         super().__init__(model, class_names)
         self.method = method
-        self.temp_image_directory_path = temp_image_directory_path
         self.num_samples = num_samples
         self.batch_size = batch_size
 
@@ -49,28 +48,10 @@ class ImageExplainer(BaseExplainer):
                 return None
     
     def predict_proba(self, instances):
-        # check if model is onnx
-        if isinstance(self.model, ort.InferenceSession):
-            image_tensor, valid_nums = preprocess_image(instances)
-            _, logits = self.model.run(None, {self.input_names[0]: image_tensor, self.input_names[1]: valid_nums})
-            return softmax(logits)
+        image_tensor, valid_nums = preprocess_image(instances)
+        _, logits = self.model.run(None, {self.input_names[0]: image_tensor, self.input_names[1]: valid_nums})
+        return softmax(logits)
         
-        # default autogluon model
-        proba_list = []
-        data = pd.DataFrame(columns=["image"])
-        for i in range(instances.shape[0]):
-            # img = Image.fromarray(instances[i], 'RGB')
-            # img_path = f"{self.temp_image_directory_path}/{i}.jpg"
-            # img.save(img_path)
-            img_path = cv2.imencode('.jpg', instances[i])[1].tobytes()
-            data = data._append({"image": img_path}, ignore_index=True)
-
-        proba_list = self.model.predict_proba(data, as_multiclass=True, realtime=True)
-
-        if self.method == "lime":
-            return np.asarray(proba_list).reshape(instances.shape[0], len(self.class_names))
-
-        return proba_list
     
 
 
@@ -81,7 +62,7 @@ class ImageExplainer(BaseExplainer):
         if self.method == "lime":
             try:
                 explanation = self.explainer.explain_instance(image_input, self.predict_proba, hide_color=0, num_samples=self.num_samples, batch_size=self.batch_size)
-                temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=False)
+                temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=10, hide_rest=False)
 
                 # Display the explanation
                 image_explanation = mark_boundaries(temp, mask, mode="thick")

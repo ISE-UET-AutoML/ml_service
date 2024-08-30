@@ -8,6 +8,7 @@ class DeployRequest(BaseModel):
     userEmail: str = Field(description="User Email")
     projectName: str = Field(description="Project name")
     runName: str = Field(description="Run name")
+    task: str = Field(description="task to be performed", default="image_classification")
 
 
 class ImagePredictionRequest(BaseModel):

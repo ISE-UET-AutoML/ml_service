@@ -24,7 +24,7 @@ from explainers.ImageExplainer import ImageExplainer
         "cors": {
             "enabled": True,
             # TODO: fix hardcode by using env vars
-            "access_control_allow_origins": ["http://localhost:8685", "https://localhost:8680", "http://localhost:8670"],
+            "access_control_allow_origins": ["http://localhost:8685", "https://localhost:8680", "http://localhost:8670", "http://localhost:3000"],
             "access_control_allow_methods": ["GET", "OPTIONS", "POST", "HEAD", "PUT"],
             "access_control_allow_credentials": True,
             "access_control_allow_headers": ["*"],
@@ -43,13 +43,26 @@ class PredictionService:
 
     def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str) -> t.Tuple[t.Any, t.List[str]]:
         try:
-            self.ort_sess = ort.InferenceSession(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx')
-            print(type(self.ort_sess))
+            self.ort_sess = ort.InferenceSession(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx', providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
             self.input_names = [in_param.name for in_param in self.ort_sess.get_inputs()]
             print("Model deploy successfully")
             return None
         except Exception as e:
             print(e)
+
+    
+    def warmup(self, task):
+        match(task):
+            case "IMAGE_CLASSIFICATION":
+                self.image_predict(images=["../ml-serving/sample_data/image_classify.jpg"])
+                print("Warmup successful")
+            
+            case "TEXT_CLASSIFICATION":
+                pass
+                
+            case _:
+                print("Invalid task")
+
     
     def temp_predict(self, image_tensor, valid_nums):
         _, logits = self.ort_sess.run(None, {self.input_names[0]: image_tensor, self.input_names[1]: valid_nums})
@@ -59,25 +72,27 @@ class PredictionService:
 
 
     @bentoml.api(input_spec=DeployRequest)
-    def deploy(self, **params: t.Any) -> str:
+    def deploy(self, **params: t.Any) -> dict:
 
+        print(params)
         userEmail = params["userEmail"]
         projectName = params["projectName"]
         runName = params["runName"]
-
+        task = params["task"]
         try:
             self.load_model_and_model_info(userEmail, projectName, runName)
+            self.warmup(task)
         except Exception as e:
             print(e)
             print("Model deploy failed")
-            return "Model deploy failed"
-        return "Model deploy successfully"
+            return {"status": "failed", "message": "Model deploy failed"}
+        return {"status": "success", "message": "Model deploy successful"}
 
     @bentoml.api(input_spec=ImagePredictionRequest, route="image_classification/predict")
-    def predict(self, **params: t.Any) -> ndarray:
+    def image_predict(self, **params: t.Any) -> ndarray:
 
         if not hasattr(self, 'ort_sess'):
-            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
+            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'], task="IMAGE_CLASSIFICATION")
             print("Model not preloaded, loading now!")
         start_time = time()
         try:
@@ -94,15 +109,15 @@ class PredictionService:
         return predictions
     
     @bentoml.api(input_spec=ImageExplainRequest, route="image_classification/explain")
-    def explain(self, **params: t.Any) -> dict:
+    def image_explain(self, **params: t.Any) -> dict:
 
         if not hasattr(self, 'ort_sess'):
-            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
             print("Model not preloaded, loading now!")
+            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'], task="IMAGE_CLASSIFICATION")
 
         start_time = time()
         try:
-            explainer = ImageExplainer(params['method'], self.ort_sess)
+            explainer = ImageExplainer(params['method'], self.ort_sess, num_samples=200, batch_size=32)
             explainer.explain(params['image'], params['image_explained_path'])
         except Exception as e:
             print(e)

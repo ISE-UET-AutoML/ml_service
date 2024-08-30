@@ -17,7 +17,7 @@ from autogluon.tabular import TabularPredictor
 from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 import joblib
-from settings.config import TEMP_DIR
+from settings.config import TEMP_DIR, BENTOML_HOST
 import shutil
 import numpy as np
 import pandas as pd
@@ -106,9 +106,9 @@ async def save_image(image, temp_image_folder):
     description="Only use in dev and testing, not for production",
 )
 async def img_class_predict(
-    userEmail: str = Form("darklord1611"),
-    projectName: str = Form("66cd1be6170fa7d38a83c650"),
-    runName: str = Form("054f3acc-a0ce-4daa-8c59-c089927b6b3d"),
+    userEmail: str = Form(...),
+    projectName: str = Form(...),
+    runName: str = Form(...),
     files: list[UploadFile] = File(...),
 ):
     print(userEmail)
@@ -158,7 +158,7 @@ async def img_class_predict(
         }
         inference_start = perf_counter()
         try:
-            probas = requests.post('http://localhost:8684/image_classification/predict', json=json).json()
+            probas = requests.post(f'{BENTOML_HOST}/image_classification/predict', json=json).json()
         except Exception as e:
             print(e)
             return {"status": "failed", "message": "Prediction failed"}
@@ -186,8 +186,8 @@ async def img_class_predict(
         return {"status": "failed", "message": "Prediction failed"}
     finally:
         pass
-        # if os.path.exists(temp_image_folder):
-        #     shutil.rmtree(temp_image_folder)
+        if os.path.exists(temp_image_folder):
+            shutil.rmtree(temp_image_folder)
 
 
 @router.post(

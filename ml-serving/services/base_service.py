@@ -55,8 +55,9 @@ class BaseService():
 
     # fake data and create requests to warmup the model
     def warmup(self, task):
-        data = self.get_fake_data(task)
-        self.predict_proba(data)
+        # data = self.get_fake_data(task)
+        # self.predict_proba(data)
+        pass
 
 
     @abc.abstractmethod

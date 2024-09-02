@@ -17,7 +17,7 @@ from autogluon.tabular import TabularPredictor
 from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 import joblib
-from settings.config import TEMP_DIR, BENTOML_HOST
+from settings.config import TEMP_DIR, IMG_CLASSIFY_SERVICE_URL
 import shutil
 import numpy as np
 import pandas as pd
@@ -149,16 +149,18 @@ async def img_class_predict(
             tasks.append(save_image(image, temp_image_folder))
         # Wait for all images to be saved
         image_paths = await asyncio.gather(*tasks)
+        
         load_time = perf_counter() - start_load
         json = {
             "userEmail": userEmail,
             "projectName": projectName,
             "runName": runName,
-            "images": image_paths   
+            "images": image_paths,
+            "task": "IMAGE_CLASSIFICATION",   
         }
         inference_start = perf_counter()
         try:
-            probas = requests.post(f'{BENTOML_HOST}/image_classification/predict', json=json).json()
+            probas = requests.post(f'{IMG_CLASSIFY_SERVICE_URL}/predict', json=json).json()
         except Exception as e:
             print(e)
             return {"status": "failed", "message": "Prediction failed"}
@@ -337,8 +339,8 @@ async def img_seg_predict(
     description="Only use in dev and testing, not for production",
 )
 async def text_predict(
-    userEmail: str = Form("darklord1611"),
-    projectName: str = Form("66bdc72c8197a434278f525d"),
+    userEmail: str = Form(...),
+    projectName: str = Form(...),
     runName: str = Form("ISE"),
     text_col: str = Form(
         "text", description="name of the text column in train.csv file"

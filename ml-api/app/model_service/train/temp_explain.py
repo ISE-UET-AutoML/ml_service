@@ -15,7 +15,7 @@ from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 from .explainers.TextExplainer import TextExplainer
 import joblib
-from settings.config import TEMP_DIR, BENTOML_HOST
+from settings.config import TEMP_DIR, IMG_CLASSIFY_SERVICE_URL
 import shutil
 import numpy as np
 from time import time
@@ -162,7 +162,7 @@ async def img_explain(
             "image_explained_path": "." + temp_explain_image_path
         }
         inference_start = perf_counter()
-        response = requests.post(f"{BENTOML_HOST}/image_classification/explain", json=json)
+        response = requests.post(f"{IMG_CLASSIFY_SERVICE_URL}/explain", json=json)
         print(response.json())
         # END NEW CODE
 

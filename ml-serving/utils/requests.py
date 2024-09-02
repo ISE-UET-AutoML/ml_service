@@ -11,16 +11,17 @@ class BaseRequest(BaseModel):
     runName: str = Field(description="Run name")
 
 class DeployRequest(BaseRequest):
-    task: str = Field(description="task to be performed", default="image_classification")
+    task: str = Field(description="task to be performed", default="IMAGE_CLASSIFICATION")
 
 # IMAGE CLASSIFICATION
 class ImagePredictionRequest(BaseRequest):
     images: List[str] = Field(description="Image file paths")
-
+    task: str = Field(description="task to be performed", default="IMAGE_CLASSIFICATION")
 class ImageExplainRequest(BaseRequest):
     image: str = Field(description="Image file path")
     image_explained_path: str = Field(description="path to store the explained image")
     method: str = Field(description="Method to explain the image", default="lime")
+    task: str = Field(description="task to be performed", default="IMAGE_CLASSIFICATION")
 
 
 # TEXT CLASSIFICATION

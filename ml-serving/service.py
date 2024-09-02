@@ -53,11 +53,11 @@ class ImageClassifyService(BaseService):
 
         return response
 
-    @bentoml.api(input_spec=ImagePredictionRequest, route="image_classification/predict")
+    @bentoml.api(input_spec=ImagePredictionRequest, route="/predict")
     def predict(self, **params: t.Any) -> ndarray:
 
         # FIX THIS
-        self.check_already_deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
+        self.check_already_deploy(**params)
         start_time = time()
         try:
             data = preprocess_image(params['images'])
@@ -72,12 +72,11 @@ class ImageClassifyService(BaseService):
 
         return predictions
     
-    @bentoml.api(input_spec=ImageExplainRequest, route="image_classification/explain")
+    @bentoml.api(input_spec=ImageExplainRequest, route="/explain")
     def explain(self, **params: t.Any) -> dict:
 
-        if not hasattr(self, 'ort_sess'):
-            print("Model not preloaded, loading now!")
-            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
+        # FIX THIS
+        self.check_already_deploy(**params)
 
         start_time = time()
         try:
@@ -133,7 +132,7 @@ class TextClassifyService(BaseService):
         response = super().deploy(**params)
         return response
 
-    @bentoml.api(input_spec=TextPredictionRequest, route="text_classification/predict")
+    @bentoml.api(input_spec=TextPredictionRequest, route="/predict")
     def predict(self, **params: t.Any) -> ndarray:
 
         # FIX THIS
@@ -151,7 +150,7 @@ class TextClassifyService(BaseService):
         # return predictions
         pass
     
-    @bentoml.api(input_spec=ImageExplainRequest, route="image_classification/explain")
+    @bentoml.api(input_spec=ImageExplainRequest, route="/explain")
     def explain(self, **params: t.Any) -> dict:
 
         # self.check_already_deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])

@@ -6,25 +6,24 @@ from typing import List
 from PIL import Image as PILImage
 import typing as t
 import bentoml
-from utils.requests import DeployRequest, ImagePredictionRequest, ImageExplainRequest
+from utils.requests import DeployRequest, ImagePredictionRequest, ImageExplainRequest, TextPredictionRequest, TextExplainRequest
 from utils.preprocess_data import preprocess_image, softmax
 from time import time
 import onnx
 import onnxruntime as ort
 from explainers.ImageExplainer import ImageExplainer
-
-
+from settings import FRONTEND_URL, BACKEND_URL, ML_SERVICE_URL, IMG_CLASSIFY_SERVICE_PORT
+from services.base_service import BaseService
 
 
 @bentoml.service(
     resources={"cpu": "1"},
     traffic={"timeout": 100},
     http={
-        "port": 8684,
+        "port": int(IMG_CLASSIFY_SERVICE_PORT),
         "cors": {
             "enabled": True,
-            # TODO: fix hardcode by using env vars
-            "access_control_allow_origins": ["http://localhost:8685", "https://localhost:8680", "http://localhost:8670", "http://localhost:3000"],
+            "access_control_allow_origins": [BACKEND_URL, FRONTEND_URL, ML_SERVICE_URL],
             "access_control_allow_methods": ["GET", "OPTIONS", "POST", "HEAD", "PUT"],
             "access_control_allow_credentials": True,
             "access_control_allow_headers": ["*"],
@@ -36,35 +35,12 @@ from explainers.ImageExplainer import ImageExplainer
     
     
 )
-class PredictionService:
+class ImageClassifyService(BaseService):
     def __init__(self) -> None:
-        print("Init")
+        super().__init__()
 
-
-    def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str) -> t.Tuple[t.Any, t.List[str]]:
-        try:
-            self.ort_sess = ort.InferenceSession(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx', providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-            self.input_names = [in_param.name for in_param in self.ort_sess.get_inputs()]
-            print("Model deploy successfully")
-            return None
-        except Exception as e:
-            print(e)
-
-    
-    def warmup(self, task):
-        match(task):
-            case "IMAGE_CLASSIFICATION":
-                self.image_predict(images=["../ml-serving/sample_data/image_classify.jpg"])
-                print("Warmup successful")
-            
-            case "TEXT_CLASSIFICATION":
-                pass
-                
-            case _:
-                print("Invalid task")
-
-    
-    def temp_predict(self, image_tensor, valid_nums):
+    def predict_proba(self, data):
+        image_tensor, valid_nums = data
         _, logits = self.ort_sess.run(None, {self.input_names[0]: image_tensor, self.input_names[1]: valid_nums})
         predictions = softmax(logits)
         print(len(predictions))
@@ -73,31 +49,19 @@ class PredictionService:
 
     @bentoml.api(input_spec=DeployRequest)
     def deploy(self, **params: t.Any) -> dict:
+        response = super().deploy(**params)
 
-        print(params)
-        userEmail = params["userEmail"]
-        projectName = params["projectName"]
-        runName = params["runName"]
-        task = params["task"]
-        try:
-            self.load_model_and_model_info(userEmail, projectName, runName)
-            self.warmup(task)
-        except Exception as e:
-            print(e)
-            print("Model deploy failed")
-            return {"status": "failed", "message": "Model deploy failed"}
-        return {"status": "success", "message": "Model deploy successful"}
+        return response
 
     @bentoml.api(input_spec=ImagePredictionRequest, route="image_classification/predict")
-    def image_predict(self, **params: t.Any) -> ndarray:
+    def predict(self, **params: t.Any) -> ndarray:
 
-        if not hasattr(self, 'ort_sess'):
-            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'], task="IMAGE_CLASSIFICATION")
-            print("Model not preloaded, loading now!")
+        # FIX THIS
+        self.check_already_deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
         start_time = time()
         try:
-            image_tensor, valid_nums = preprocess_image(params['images'])
-            predictions = self.temp_predict(image_tensor, valid_nums)
+            data = preprocess_image(params['images'])
+            predictions = self.predict_proba(data)
             print("Prediction successful")
         except Exception as e:
             print(e)
@@ -109,11 +73,11 @@ class PredictionService:
         return predictions
     
     @bentoml.api(input_spec=ImageExplainRequest, route="image_classification/explain")
-    def image_explain(self, **params: t.Any) -> dict:
+    def explain(self, **params: t.Any) -> dict:
 
         if not hasattr(self, 'ort_sess'):
             print("Model not preloaded, loading now!")
-            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'], task="IMAGE_CLASSIFICATION")
+            self.deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
 
         start_time = time()
         try:
@@ -127,3 +91,81 @@ class PredictionService:
         print(f"Time taken: {end_time - start_time}")
 
         return {"status": "success"}
+
+
+
+
+
+@bentoml.service(
+    resources={"cpu": "1"},
+    traffic={"timeout": 100},
+    http={
+        "port": IMG_CLASSIFY_SERVICE_PORT,
+        "cors": {
+            "enabled": True,
+            "access_control_allow_origins": [BACKEND_URL, FRONTEND_URL, ML_SERVICE_URL],
+            "access_control_allow_methods": ["GET", "OPTIONS", "POST", "HEAD", "PUT"],
+            "access_control_allow_credentials": True,
+            "access_control_allow_headers": ["*"],
+            "access_control_allow_origin_regex": "https://.*\.my_org\.com",
+            "access_control_max_age": 1200,
+            "access_control_expose_headers": ["Content-Length"]
+        }
+    },
+    
+    
+)
+class TextClassifyService(BaseService):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def predict_proba(self, data):
+        # image_tensor, valid_nums = data
+        # _, logits = self.ort_sess.run(None, {self.input_names[0]: image_tensor, self.input_names[1]: valid_nums})
+        # predictions = softmax(logits)
+        # print(len(predictions))
+        # return predictions
+        pass
+
+
+    @bentoml.api(input_spec=DeployRequest)
+    def deploy(self, **params: t.Any) -> dict:
+        response = super().deploy(**params)
+        return response
+
+    @bentoml.api(input_spec=TextPredictionRequest, route="text_classification/predict")
+    def predict(self, **params: t.Any) -> ndarray:
+
+        # FIX THIS
+        # self.check_already_deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
+        # start_time = time()
+        # try:
+        #     print("Prediction successful")
+        # except Exception as e:
+        #     print(e)
+        #     print("Prediction failed")
+        #     return "Prediction failed"
+        # end_time = time()
+        # print(f"Time taken: {end_time - start_time}")
+
+        # return predictions
+        pass
+    
+    @bentoml.api(input_spec=ImageExplainRequest, route="image_classification/explain")
+    def explain(self, **params: t.Any) -> dict:
+
+        # self.check_already_deploy(userEmail=params['userEmail'], projectName=params['projectName'], runName=params['runName'])
+
+        # start_time = time()
+        # try:
+        #     explainer = ImageExplainer(params['method'], self.ort_sess, num_samples=200, batch_size=32)
+        #     explainer.explain(params['image'], params['image_explained_path'])
+        # except Exception as e:
+        #     print(e)
+        #     print("Prediction failed")
+        #     return {"status": "failed", "message": "Explanation failed"}
+        # end_time = time()
+        # print(f"Time taken: {end_time - start_time}")
+
+        # return {"status": "success"}
+        pass

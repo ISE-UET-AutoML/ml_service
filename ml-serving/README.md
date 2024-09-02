@@ -1,4 +1,6 @@
 ## How to run
 
-- `pip install bentoml tensorrt onnx onxxruntime`
-- `bentoml serve service:PredictionService`
+- `pip install bentoml onnx onxxruntime`
+- `bentoml serve service:{TASK}`
+
+- TASK: ImageClassfiyService, TextClassifyService

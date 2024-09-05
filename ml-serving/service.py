@@ -157,8 +157,8 @@ class TextClassifyService(BaseService):
 
         start_time = time()
         try:
-            explainer = TextExplainer(params['method'], self.ort_sess, class_names=self.class_names)
-            explanation = explainer.explain(params['text'])
+            explainer = TextExplainer(params['method'], self.ort_sess, class_names=params["class_names"])
+            explanations = explainer.explain(params['text'])
         except Exception as e:
             print(e)
             print("Prediction failed")
@@ -166,4 +166,4 @@ class TextClassifyService(BaseService):
         end_time = time()
         print(f"Time taken: {end_time - start_time}")
 
-        return {"status": "success"}
+        return {"status": "success", "explanation": explanations}

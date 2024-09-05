@@ -34,4 +34,5 @@ class TextPredictionRequest(BaseRequest):
 class TextExplainRequest(BaseRequest):
     text: str = Field(description="text to explained")
     method: str = Field(description="Method to explain the text", default="lime")
+    class_names: List[str] = Field(description="class names")
     task: str = Field(description="task to be performed", default="TEXT_CLASSIFICATION")

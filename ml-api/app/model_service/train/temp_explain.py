@@ -1,6 +1,7 @@
 import base64
 from email.mime import image
 from io import StringIO
+import json
 import re
 from typing import Optional, Union
 from urllib import response
@@ -15,7 +16,7 @@ from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 from .explainers.TextExplainer import TextExplainer
 import joblib
-from settings.config import TEMP_DIR, IMG_CLASSIFY_SERVICE_URL
+from settings.config import TEMP_DIR, IMG_CLASSIFY_SERVICE_URL, TEXT_CLASSIFY_SERVICE_URL
 import shutil
 import numpy as np
 from time import time
@@ -153,7 +154,7 @@ async def img_explain(
         image_path = await asyncio.gather(*tasks) # temporary workaround 
         load_time = perf_counter() - start_load
 
-        json = {
+        json_request = {
             "method": "lime",
             "userEmail": userEmail,
             "projectName": projectName,
@@ -162,11 +163,12 @@ async def img_explain(
             "image_explained_path": "." + temp_explain_image_path
         }
         inference_start = perf_counter()
-        response = requests.post(f"{IMG_CLASSIFY_SERVICE_URL}/explain", json=json)
+        response = requests.post(f"{IMG_CLASSIFY_SERVICE_URL}/explain", json=json_request)
         print(response.json())
         # END NEW CODE
 
         inference_time = perf_counter() - inference_start
+
         # TODO: change return format, base64 string usually very slow
         with open(temp_explain_image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
@@ -212,16 +214,25 @@ async def text_explain(
     start_time = time()
     try:
         start_load = perf_counter()
-        # TODO : Load model with any path
-        model = await load_model(userEmail, projectName, runName)
+        with open(f"tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/metadata.json", "r") as f:
+            labels = json.load(f)['labels']
         load_time = perf_counter() - start_load
+
         inference_start = perf_counter()
 
-        explainer = TextExplainer(
-            "lime", model, class_names=[label for label in model.class_labels]
-        )
+        json_request = {
+            "userEmail": userEmail,
+            "projectName": projectName,
+            "runName": runName,
+            "text": text,
+            "method": "lime",
+            "class_names": labels
+        }
+
+
         try:
-            explanations = explainer.explain(text)
+            response = requests.post(f'{TEXT_CLASSIFY_SERVICE_URL}/explain', json=json_request).json()
+
         except Exception as e:
             print(e)
 
@@ -230,7 +241,7 @@ async def text_explain(
             "message": "Explanation completed",
             "load_time": load_time,
             "inference_time": perf_counter() - inference_start,
-            "explanations": explanations,
+            "explanations": response["explanation"],
         }
     except Exception as e:
         print(e)

@@ -5,6 +5,9 @@ from PIL import Image
 import torchvision.transforms as transforms
 import requests
 from time import time
+import pandas as pd
+from transformers import ElectraTokenizer
+import json
 
 IMAGE_SIZE = 224
 
@@ -23,7 +26,7 @@ def preprocess_image(data):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    def preprocess_image(image_input):
+    def preprocess_single_image(image_input):
         if isinstance(image_input, str):
             img = Image.open(image_input)
         else:
@@ -32,7 +35,7 @@ def preprocess_image(data):
         return img
 
     start_time = time()
-    images = [preprocess_image(image_input) for image_input in data]
+    images = [preprocess_single_image(image_input) for image_input in data]
 
     print(f"Preprocess time: {time() - start_time}")
     image_tensor = np.stack(images)
@@ -42,3 +45,22 @@ def preprocess_image(data):
     return image_tensor, valid_nums
 
 
+# accept either raw text or path to a csv file
+# text_col indicates that input is a path
+def preprocess_text(text_input, text_col=None):
+
+    if text_col is None:
+        text_list = text_input
+    else:
+        text_df = pd.read_csv(text_input)
+        text_list = text_df[text_col].tolist()
+
+    tokenizer = ElectraTokenizer.from_pretrained('google/electra-base-discriminator')
+    inputs = tokenizer(text_list, return_tensors="np", padding="max_length", max_length=128, truncation=True)
+
+    token_ids = inputs['input_ids']
+    segment_ids = inputs['token_type_ids']
+    valid_length = np.sum(token_ids != tokenizer.pad_token_id, axis=1)
+
+    return token_ids, segment_ids, valid_length
+    

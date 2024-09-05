@@ -25,6 +25,7 @@ import asyncio
 from typing import Optional, Union
 import torch
 import os
+import json
 
 torch.cuda.empty_cache()
 gc.collect()
@@ -193,6 +194,12 @@ class AutogluonTrainer(object):
             exported_path = predictor.export_onnx(data=train_data[0:1], path=str(model_path), batch_size=4, truncate_long_and_double=True)
 
             print(predictor.eval_metric)
+            
+            metadata = {
+                "labels": predictor.class_labels,
+            }
+            with open(f"{model_path}/metadata.json", "w") as f:
+                json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
 
             self._logger.info(f"Training completed. Model saved to {model_path}")
             self._logger.info(f"Export completed. Model saved to {exported_path}")

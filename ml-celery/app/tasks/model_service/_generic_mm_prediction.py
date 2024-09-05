@@ -15,7 +15,7 @@ from utils.train_utils import find_in_current_dir
 import os
 from pathlib import Path
 import pandas as pd
-
+import json
 
 def train(task_id: str, request: dict):
     print("task_id:", task_id)
@@ -98,6 +98,14 @@ def train(task_id: str, request: dict):
         # print("Training model successfully")
 
         end = perf_counter()
+
+        metadata = {
+                "labels": predictor.class_labels,
+            }
+        with open(f"{user_model_path}/metadata.json", "w") as f:
+            json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
+
+        print(f"Metadata saved")
         
         print(f"Training completed. Model save to {exported_path}")
 

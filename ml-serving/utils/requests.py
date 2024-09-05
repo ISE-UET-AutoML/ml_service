@@ -9,6 +9,7 @@ class BaseRequest(BaseModel):
     userEmail: str = Field(description="User Email")
     projectName: str = Field(description="Project name")
     runName: str = Field(description="Run name")
+    task: str = Field(description="task to be performed", default="IMAGE_CLASSIFICATION")
 
 class DeployRequest(BaseRequest):
     task: str = Field(description="task to be performed", default="IMAGE_CLASSIFICATION")
@@ -27,8 +28,10 @@ class ImageExplainRequest(BaseRequest):
 # TEXT CLASSIFICATION
 class TextPredictionRequest(BaseRequest):
     text_file_path: str = Field(description="Text file path", default="text.csv")
-    text_col: List[str] = Field(description="text column in the text file")
+    text_col: str = Field(description="text column in the text file", default=None)
+    task: str = Field(description="task to be performed", default="TEXT_CLASSIFICATION")
 
 class TextExplainRequest(BaseRequest):
     text: str = Field(description="text to explained")
     method: str = Field(description="Method to explain the text", default="lime")
+    task: str = Field(description="task to be performed", default="TEXT_CLASSIFICATION")

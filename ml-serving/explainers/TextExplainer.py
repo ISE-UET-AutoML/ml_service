@@ -14,6 +14,8 @@ from nltk.tokenize import word_tokenize
 import nltk
 import contractions
 
+from utils.preprocess_data import preprocess_text, softmax
+
 class TextExplainer(BaseExplainer):
     def __init__(self, method="shap", model=None, class_names=None):
         super().__init__(model, class_names)
@@ -60,10 +62,10 @@ class TextExplainer(BaseExplainer):
             return "Method not supported"
         
     def predict_proba(self, instances):
-        sentences = []
-        for instance in instances:
-            sentences.append(instance)
-        return self.model.predict_proba({'text': sentences}, realtime=True)
+        token_ids, segment_ids, valid_length = preprocess_text(instances)
+        _, logits = self.model.run(None, {self.input_names[0]: token_ids, self.input_names[1]: segment_ids, self.input_names[2]: valid_length})
+        predictions = softmax(logits)
+        return predictions
 
     def explain(self, instance):
         data = self.preprocess(instance)

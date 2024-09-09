@@ -41,7 +41,6 @@ datetime==4.3
 flower==1.0.0
 lime==0.2.0.1
 shap==0.46.0
-label-studio-sdk==1.0.4
 flask==3.0.3
 isort
 tensorrt

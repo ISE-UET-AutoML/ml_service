@@ -110,14 +110,12 @@ async def img_class_predict(
     userEmail: str = Form(...),
     projectName: str = Form(...),
     runName: str = Form(...),
-    files: list[UploadFile] = File(...),
+    files: str = Form(...),
 ):
     print(userEmail)
     print("Run Name:", runName)
 
-    print(len(files))
-
-    return {"status": "success", "message": "Prediction completed"}
+    print(files.split(","))
 
     try:
         predictions = []
@@ -125,8 +123,8 @@ async def img_class_predict(
         temp_image_folder = f"{TEMP_DIR}/{userEmail}/{projectName}/temp_predict"
         os.makedirs(temp_image_folder, exist_ok=True)
 
-        image_paths = []
-
+        # image_paths = []
+        image_paths = files.split(",")
 
         # OLD WAYS
         # temp_image_df = pd.DataFrame(columns=["image"])
@@ -148,15 +146,19 @@ async def img_class_predict(
 
         # NEW WAYS
         start_load = perf_counter()
-        tasks = []
+        # tasks = []
 
-        for image in files:
-            tasks.append(save_file(image, temp_image_folder))
-        # Wait for all images to be saved
-        image_paths = await asyncio.gather(*tasks)
+        # for image in files:
+        #     tasks.append(save_file(image, temp_image_folder))
+        # # Wait for all images to be saved
+        # image_paths = await asyncio.gather(*tasks)
         
+        with open(f"tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/metadata.json", "r") as f:
+            labels = json.load(f)['labels']
+
+
         load_time = perf_counter() - start_load
-        json = {
+        json_request = {
             "userEmail": userEmail,
             "projectName": projectName,
             "runName": runName,
@@ -165,7 +167,7 @@ async def img_class_predict(
         }
         inference_start = perf_counter()
         try:
-            probas = requests.post(f'{IMG_CLASSIFY_SERVICE_URL}/predict', json=json).json()
+            probas = requests.post(f'{IMG_CLASSIFY_SERVICE_URL}/predict', json=json_request).json()
         except Exception as e:
             print(e)
             return {"status": "failed", "message": "Prediction failed"}
@@ -176,13 +178,12 @@ async def img_class_predict(
             predictions.append(
                 {
                     "key": str(uuid.uuid4()),
-                    "class": str(np.argmax(proba)),
+                    "class": labels[np.argmax(proba)],
                     "confidence": round(float(max(proba)), 2),
                 }
             )
 
         return {
-            "status": "success",
             "message": "Prediction completed",
             "load_time": load_time,
             "inference_time": perf_counter() - inference_start,

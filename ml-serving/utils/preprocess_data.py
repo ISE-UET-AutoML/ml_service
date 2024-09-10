@@ -28,7 +28,10 @@ def preprocess_image(data):
 
     def preprocess_single_image(image_input):
         if isinstance(image_input, str):
-            img = Image.open(image_input)
+            if image_input.startswith("http"):
+                img = Image.open(requests.get(image_input, stream=True).raw)
+            else:
+                img = Image.open(image_input)
         else:
             img = Image.fromarray(image_input, 'RGB')
         img = transform(img)

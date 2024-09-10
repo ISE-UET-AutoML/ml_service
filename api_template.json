@@ -8,6 +8,17 @@
             "description3": "optimized_for_deployment is only for tabular tasks, only tabular task can have multiple presets "
         },
         {
+            "api": "image_classify_train v2",
+            "sample request": {
+                "userEmail": "test-automl",
+                "projectId": "test_dataservice",
+                "ds_projectId": "15",
+                "runName": "ISE",
+                "training_time": 60,
+                "presets": "high_quality"
+            }
+        },
+        {
             "api": "image_classify_train",
             "sample request": {
                 "userEmail": "test-automl",

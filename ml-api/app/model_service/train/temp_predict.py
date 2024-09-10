@@ -115,6 +115,10 @@ async def img_class_predict(
     print(userEmail)
     print("Run Name:", runName)
 
+    print(len(files))
+
+    return {"status": "success", "message": "Prediction completed"}
+
     try:
         predictions = []
         # write the image to a temporary folder

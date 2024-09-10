@@ -196,7 +196,7 @@ class AutogluonTrainer(object):
             print(predictor.eval_metric)
             
             metadata = {
-                "labels": predictor.class_labels,
+                "labels": predictor.class_labels.tolist(),
             }
             with open(f"{model_path}/metadata.json", "w") as f:
                 json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)

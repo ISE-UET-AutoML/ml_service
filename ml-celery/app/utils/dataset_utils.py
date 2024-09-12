@@ -146,11 +146,12 @@ def download_dataset2(
     data = res.json()["data"]
 
     for data_point in data:
-        label = data_point["label"]
-        os.makedirs(f"{dataset_dir}{label}", exist_ok=True)
+
         for k, v in data_point.items():
             if k.startswith("data-IMG-"):
                 name = uuid.uuid4().hex
+                label = data_point["label"]
+                os.makedirs(f"{dataset_dir}{label}", exist_ok=True)
                 with open(f"{dataset_dir}{label}/{name}.jpg", "wb+") as f:
                     f.write(requests.get(v).content)
                     print("Image downloaded: ", f"{dataset_dir}{label}/{name}.jpg")

@@ -80,7 +80,7 @@ async def train_text_prediction(request: SimpleTrainRequest):
     }
 
     task_id = celery_client.send_task(
-        "model_service.generic_mm_prediction.train",
+        "model_service.text_prediction.train",
         kwargs={
             "request": payload,
         },
@@ -91,4 +91,3 @@ async def train_text_prediction(request: SimpleTrainRequest):
         "task_id": str(task_id),
         "send_status": "SUCCESS",
     }
-

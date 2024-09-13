@@ -21,7 +21,7 @@ class BaseTrainTask(Task):
         kwargs – Original keyword arguments for the executed task.
         """
         experiment_name = task_id
-        if "saved_model_path" in retval:
+        if retval is not None and "saved_model_path" in retval:
             res = requests.get(
                 f"{BACKEND_HOST}/experiments/deploy/?experiment_name={experiment_name}&experiment_status=DONE",
                 cookies={"accessToken": ACCESS_TOKEN},

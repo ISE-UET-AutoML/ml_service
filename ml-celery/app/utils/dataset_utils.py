@@ -1,5 +1,7 @@
+from cProfile import label
 import os
 from pathlib import Path
+import uuid
 import pandas
 import splitfolders
 import shutil
@@ -8,7 +10,9 @@ from typing import Union
 import gdown
 from zipfile import ZipFile
 from autogluon.core.utils.loaders import load_zip
-from settings.config import BACKEND_HOST, ACCESS_TOKEN, REFRESH_TOKEN
+from settings.config import BACKEND_HOST, ACCESS_TOKEN, REFRESH_TOKEN, DATASERVICE_HOST
+
+import requests
 
 
 def split_data(
@@ -113,6 +117,52 @@ def model_size(user_model_path):
     return model_size
 
 
+def download_dataset2(
+    dataset_dir: str,
+    dataset_url: str,
+    method: str,
+    format: str | None = None,
+) -> pandas.DataFrame:
+    """
+    Download dataset
+
+    Args:
+        dataset_dir: local folder where the dataset is going to be stored, should be **/dataset/
+        url:
+        method: where to download dataset from
+        format: for future use
+    """
+    #! Data set may come in many format, this function should be changed to handle all cases
+
+    os.makedirs(dataset_dir, exist_ok=True)
+    if method != "data_service":
+        raise ValueError(f"Method {method} not supported")
+
+    dataset_url = f"{DATASERVICE_HOST}/ls/task/{dataset_url}/export_for_training"
+
+    res = requests.get(dataset_url)
+    if res.status_code >= 300:
+        raise ValueError("Error in downloading dataset")
+    data = res.json()["data"]
+
+    for data_point in data:
+
+        for k, v in data_point.items():
+            if k.startswith("data-IMG-"):
+                name = uuid.uuid4().hex
+                label = data_point["label"]
+                os.makedirs(f"{dataset_dir}{label}", exist_ok=True)
+                with open(f"{dataset_dir}{label}/{name}.jpg", "wb+") as f:
+                    f.write(requests.get(v).content)
+                    print("Image downloaded: ", f"{dataset_dir}{label}/{name}.jpg")
+                    data_point[k] = f"{dataset_dir}{label}/{name}.jpg"
+
+    df = pandas.DataFrame.from_dict(data)
+    df.to_csv(f"{dataset_dir}train.csv", index=False)
+
+    return df
+
+
 def download_dataset(
     dataset_dir: str,
     is_zip: bool,
@@ -134,6 +184,8 @@ def download_dataset(
     #! Data set may come in many format, this function should be changed to handle all cases
 
     os.makedirs(dataset_dir, exist_ok=True)
+    if method == "data_service":
+        return download_dataset_data_service(dataset_dir, request["dataset_url"])
     if method == "gdrive":
         return download_dataset_gdrive(dataset_dir, is_zip, request["dataset_url"])
     if method == "backend":
@@ -144,6 +196,11 @@ def download_dataset(
         )
     if method == "csv-url":
         return download_dataset_csv_url(dataset_dir, request["dataset_url"])
+
+
+def download_dataset_data_service(dataset_dir: str, ds_project_id: str):
+
+    pass
 
 
 def download_dataset_gdrive(dataset_dir: str, is_zip: bool, url: str):
@@ -277,9 +334,6 @@ def download_dataset_backend_text(dataset_dir: str, projectID: str):
 
     # print(data)
     return dataset_dir
-
-
-import requests
 
 
 def download_dataset_zip_url(dataset_dir: str, url: str):

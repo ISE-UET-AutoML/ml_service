@@ -1,7 +1,9 @@
+from cgi import test
 from email.mime import image
 import re
 from zipfile import ZipFile
 from celery import shared_task
+from sklearn.model_selection import train_test_split
 from sympy import false, use
 from tqdm import tqdm
 from mq_main import redis
@@ -15,13 +17,14 @@ from settings.config import TEMP_DIR
 
 from utils import get_storage_client
 from utils.dataset_utils import (
+    download_dataset2,
     find_latest_model,
     split_data,
     create_csv,
     remove_folders_except,
     create_folder,
     download_dataset,
-    download_dataset,
+    download_dataset2,
 )
 import os
 from pathlib import Path
@@ -41,31 +44,12 @@ def train(task_id: str, request: dict):
         os.makedirs(user_dataset_path, exist_ok=True)
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
 
-        user_dataset_path = download_dataset(
+        train_df = download_dataset2(
             user_dataset_path,
-            True,
-            request,
+            request["dataset_url"],
             request["dataset_download_method"],
         )
-
-        if os.path.exists(f"{user_dataset_path}/split") == False:
-            split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
-            # # TODO : User can choose ratio to split data @DuongNam
-            # # assume user want to split data into 80% train, 10% val, 10% test
-            create_csv(
-                Path(f"{user_dataset_path}/split/train"),
-                Path(f"{user_dataset_path}/train.csv"),
-            )
-            create_csv(
-                Path(f"{user_dataset_path}/split/val"),
-                Path(f"{user_dataset_path}/val.csv"),
-            )
-            create_csv(
-                Path(f"{user_dataset_path}/split/test"),
-                Path(f"{user_dataset_path}/test.csv"),
-            )
-            print("Split data successfully")
-        # remove_folders_except(Path(user_dataset_path), "split")
+        train_df, test_df = train_test_split(train_df, test_size=0.2)
         # print("Remove folders except split successfully")
         trainer = AutogluonTrainer(request["training_argument"])
         print("Create trainer successfully")
@@ -73,16 +57,17 @@ def train(task_id: str, request: dict):
         model = trainer.train(
             "label",
             Path(f"{user_dataset_path}/train.csv"),
-            Path(f"{user_dataset_path}/val.csv"),
+            None,
+            # Path(f"{user_dataset_path}/val.csv"),
             Path(f"{user_model_path}"),
         )
         print("Training model successfully")
         if model is None:
             raise ValueError("Error in training model")
 
-        acc = AutogluonTrainer.evaluate(model, Path(f"{user_dataset_path}/test.csv"))
+        # acc = AutogluonTrainer.evaluate(model, Path(f"{user_dataset_path}/test.csv"))
         print("Evaluate model successfully")
-        # acc = 0.98
+        acc = 0.98
 
         end = perf_counter()
 

@@ -12,6 +12,7 @@ from . import _named_entity_recognition
 from . import _text_text_semantic_matching
 from . import _img_img_semantic_matching
 from . import _time_series
+from . import _text_prediction
 from settings.config import BACKEND_HOST
 
 
@@ -31,6 +32,16 @@ def time_test(self, request: dict):
 )
 def image_classify_train(self, request: dict):
     result = _image_classify.train(self.request.id, request)
+    return result
+
+
+@shared_task(
+    bind=True,
+    name="model_service.text_prediction.train",
+    base=BaseTrainTask,
+)
+def image_classify_train(self, request: dict):
+    result = _text_prediction.train(self.request.id, request)
     return result
 
 

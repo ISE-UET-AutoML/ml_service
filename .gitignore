@@ -181,3 +181,7 @@ mydata/
 public/
 
 docker-compose.yml
+
+testing/
+
+environment.yml

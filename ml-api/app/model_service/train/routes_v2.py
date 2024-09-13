@@ -13,8 +13,8 @@ async def train_image_classification(request: SimpleTrainRequest):
         "training_time": request.training_time,
         "runName": request.runName,
         "presets": request.presets,
-        "dataset_url": "string",
-        "dataset_download_method": "backend",
+        "dataset_url": request.ds_projectId,
+        "dataset_download_method": "data_service",
         "training_argument": {
             "data_args": {},
             "ag_model_args": {
@@ -61,8 +61,8 @@ async def train_text_prediction(request: SimpleTrainRequest):
         "training_time": request.training_time,
         "runName": request.runName,
         "presets": request.presets,
-        "dataset_url": f"{BACKEND_HOST}/media/upload/{request.projectId}/train.csv",
-        "dataset_download_method": "text-backend",
+        "dataset_url": request.ds_projectId,
+        "dataset_download_method": "data_service",
         "label_column": "label",
         "training_argument": {
             "ag_fit_args": {
@@ -80,7 +80,7 @@ async def train_text_prediction(request: SimpleTrainRequest):
     }
 
     task_id = celery_client.send_task(
-        "model_service.generic_mm_prediction.train",
+        "model_service.text_prediction.train",
         kwargs={
             "request": payload,
         },

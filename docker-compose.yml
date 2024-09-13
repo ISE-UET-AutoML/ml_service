@@ -27,30 +27,29 @@ services:
       - rabbitmq-logs:/var/log/rabbitmq
     networks:
       - mlnet
-
-  # Label Studio
-  label-studio:
-    image: heartexlabs/label-studio:latest
-    container_name: label_studio
-    ports:
-      - 8673:8080
-    volumes:
-      - ./mydata:/label-studio/data
-      # for some stupid reason, label studio is only able to run with mydata folder
-    user: root
-    command: sh -c "pip install -U label-studio && chown 1001:root /label-studio/data && label-studio start"
-    networks:
-      - mlnet
+  #
+  # # Label Studio
+  # label-studio:
+  #   image: heartexlabs/label-studio:latest
+  #   container_name: label_studio
+  #   ports:
+  #     - 8673:8080
+  #   volumes:
+  #     - ./mydata:/label-studio/data
+  #     # for some stupid reason, label studio is only able to run with mydata folder
+  #   user: root
+  #   command: sh -c "pip install -U label-studio && chown 1001:root /label-studio/data && label-studio start"
+  #   networks:
+  #     - mlnet
   ##
 
   # temp-rm:
-  #     # remove any files :)), use this to delete files of label studio
-  #     image: ubuntu
-  #     container_name: temp-rm
-  #     command: sh -c "rm -rf /tmp/*"
-  #     volumes:
-  #         - ./mydata:/tmp/
-
+  #   # remove any files :)), use this to delete files of label studio
+  #   image: ubuntu
+  #   container_name: temp-rm
+  #   command: sh -c "rm -rf /tmp/*"
+  #   volumes:
+  #     - ./mydata:/tmp/
   # API server
   # ml-api:
   #     build:

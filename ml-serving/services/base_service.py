@@ -2,6 +2,7 @@ import onnxruntime as ort
 import typing as t
 import abc
 import json
+from utils.requests import DeployRequest
 
 
 class BaseService():
@@ -21,12 +22,12 @@ class BaseService():
 
 
 
-    def deploy(self, **params: t.Any) -> dict:
+    def deploy(self, params: DeployRequest) -> dict:
         print(params)
-        userEmail = params["userEmail"]
-        projectName = params["projectName"]
-        runName = params["runName"]
-        task = params["task"]
+        userEmail = params.userEmail
+        projectName = params.projectName
+        runName = params.runName
+        task = params.task
         try:
             self.load_model_and_model_info(userEmail, projectName, runName)
             self.warmup(task)
@@ -37,17 +38,17 @@ class BaseService():
         return {"status": "success", "message": "Model deploy successful"}
         
     
-    def check_already_deploy(self, **params: t.Any) -> dict:
+    def check_already_deploy(self, params: DeployRequest) -> dict:
         if hasattr(self, 'ort_sess'):
             return {"status": "success", "message": "Model already deployed"}
         else:
-            self.deploy(**params)
+            self.deploy(params)
             return {"status": "success", "message": "Model deployed successfully"}
         
     # FIX RELATIVE PATH ERROR
-    def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str) -> t.Tuple[t.Any, t.List[str]]:
+    def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str) -> None:
         try:
-            self.ort_sess = ort.InferenceSession(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx', providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+            self.ort_sess = ort.InferenceSession(f'tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx', providers=['AzureExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'])
             self.input_names = [in_param.name for in_param in self.ort_sess.get_inputs()]
             print("Model deploy successfully")
             return None

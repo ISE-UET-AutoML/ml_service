@@ -6,35 +6,19 @@ from typing import List
 from PIL import Image as PILImage
 import typing as t
 import bentoml
-from utils.requests import DeployRequest, ImagePredictionRequest, ImageExplainRequest, TextPredictionRequest, TextExplainRequest
-from utils.preprocess_data import preprocess_image, softmax, preprocess_text
+from utils.requests import DeployRequest, ImagePredictionRequest, ImageExplainRequest, TextPredictionRequest, TextExplainRequest, BaseRequest
+from utils.preprocess_data import preprocess_image, softmax, preprocess_text, combine_extra_request_fields
 from time import time
 import onnx
 import onnxruntime as ort
 from explainers.ImageExplainer import ImageExplainer
 from explainers.TextExplainer import TextExplainer
-from settings import FRONTEND_URL, BACKEND_URL, ML_SERVICE_URL, IMG_CLASSIFY_SERVICE_PORT, TEXT_CLASSIFY_SERVICE_PORT
+from settings import FRONTEND_URL, BACKEND_URL, ML_SERVICE_URL, INFERENCE_SERVICE_PORT
 from services.base_service import BaseService
-
 
 @bentoml.service(
     resources={"cpu": "1"},
-    traffic={"timeout": 100},
-    http={
-        "port": int(IMG_CLASSIFY_SERVICE_PORT),
-        "cors": {
-            "enabled": True,
-            "access_control_allow_origins": [BACKEND_URL, FRONTEND_URL, ML_SERVICE_URL],
-            "access_control_allow_methods": ["GET", "OPTIONS", "POST", "HEAD", "PUT"],
-            "access_control_allow_credentials": True,
-            "access_control_allow_headers": ["*"],
-            "access_control_allow_origin_regex": "https://.*\.my_org\.com",
-            "access_control_max_age": 1200,
-            "access_control_expose_headers": ["Content-Length"]
-        }
-    },
-    
-    
+    traffic={"timeout": 500}, 
 )
 class ImageClassifyService(BaseService):
     def __init__(self) -> None:
@@ -48,20 +32,26 @@ class ImageClassifyService(BaseService):
         return predictions
 
 
-    @bentoml.api(input_spec=DeployRequest)
-    def deploy(self, **params: t.Any) -> dict:
-        response = super().deploy(**params)
+    @bentoml.api()
+    async def deploy(self, params: DeployRequest) -> dict:
+        response = super().deploy(params)
 
         return response
+    
+    @bentoml.api()
+    def test_res(self, req: ImagePredictionRequest) -> dict:
 
-    @bentoml.api(input_spec=ImagePredictionRequest, route="/predict")
-    def predict(self, **params: t.Any) -> ndarray:
+        print(req)
+        return {"status": "success", "task": "image_classification"}
+
+    @bentoml.api()
+    async def predict(self, params: ImagePredictionRequest) -> ndarray:
 
         # FIX THIS
-        self.check_already_deploy(**params)
+        self.check_already_deploy(params)
         start_time = time()
         try:
-            data = preprocess_image(params['images'])
+            data = preprocess_image(params.images)
             predictions = self.predict_proba(data)
             print("Prediction successful")
         except Exception as e:
@@ -73,11 +63,11 @@ class ImageClassifyService(BaseService):
 
         return predictions
     
-    @bentoml.api(input_spec=ImageExplainRequest, route="/explain")
-    def explain(self, **params: t.Any) -> dict:
+    @bentoml.api()
+    async def explain(self, params: ImageExplainRequest) -> dict:
 
         # FIX THIS
-        self.check_already_deploy(**params)
+        self.check_already_deploy(params)
 
         start_time = time()
         try:
@@ -98,22 +88,7 @@ class ImageClassifyService(BaseService):
 
 @bentoml.service(
     resources={"cpu": "1"},
-    traffic={"timeout": 100},
-    http={
-        "port": int(TEXT_CLASSIFY_SERVICE_PORT),
-        "cors": {
-            "enabled": True,
-            "access_control_allow_origins": [BACKEND_URL, FRONTEND_URL, ML_SERVICE_URL],
-            "access_control_allow_methods": ["GET", "OPTIONS", "POST", "HEAD", "PUT"],
-            "access_control_allow_credentials": True,
-            "access_control_allow_headers": ["*"],
-            "access_control_allow_origin_regex": "https://.*\.my_org\.com",
-            "access_control_max_age": 1200,
-            "access_control_expose_headers": ["Content-Length"]
-        }
-    },
-    
-    
+    traffic={"timeout": 500},
 )
 class TextClassifyService(BaseService):
     def __init__(self) -> None:
@@ -127,18 +102,24 @@ class TextClassifyService(BaseService):
         return predictions
 
 
-    @bentoml.api(input_spec=DeployRequest)
-    def deploy(self, **params: t.Any) -> dict:
-        response = super().deploy(**params)
+    @bentoml.api()
+    def deploy(self, params: DeployRequest) -> dict:
+        response = super().deploy(params)
         return response
+    
+    @bentoml.api()
+    def test_res(self, params: TextPredictionRequest) -> dict:
+        print(params)
 
-    @bentoml.api(input_spec=TextPredictionRequest, route="/predict")
-    def predict(self, **params: t.Any) -> ndarray:
+        return {"status": "success", "task": "text_classification"}
+
+    @bentoml.api()
+    def predict(self, params: TextPredictionRequest) -> ndarray:
 
         # FIX THIS
-        self.check_already_deploy(**params)
+        self.check_already_deploy(params)
 
-        data = preprocess_text(params['text_file_path'], params['text_col'])
+        data = preprocess_text(params.text_file_path, params.text_col)
         try:
             predictions = self.predict_proba(data)
             print(predictions)
@@ -149,16 +130,16 @@ class TextClassifyService(BaseService):
 
         return predictions
     
-    @bentoml.api(input_spec=TextExplainRequest, route="/explain")
-    def explain(self, **params: t.Any) -> dict:
+    @bentoml.api()
+    def explain(self, params: TextExplainRequest) -> dict:
 
         # FIX THIS
         self.check_already_deploy(**params)
 
         start_time = time()
         try:
-            explainer = TextExplainer(params['method'], self.ort_sess, class_names=params["class_names"])
-            explanations = explainer.explain(params['text'])
+            explainer = TextExplainer(params.method, self.ort_sess, class_names=params["class_names"])
+            explanations = explainer.explain(params.text)
         except Exception as e:
             print(e)
             print("Prediction failed")
@@ -167,3 +148,64 @@ class TextClassifyService(BaseService):
         print(f"Time taken: {end_time - start_time}")
 
         return {"status": "success", "explanation": explanations}
+    
+
+
+@bentoml.service(
+    resources={"cpu": "1"},
+    traffic={"timeout": 500},
+    http={
+        "port": int(INFERENCE_SERVICE_PORT),
+        "cors": {
+            "enabled": True,
+            "access_control_allow_origins": ["*"],
+            "access_control_allow_methods": ["GET", "OPTIONS", "POST", "HEAD", "PUT"],
+            "access_control_allow_credentials": True,
+            "access_control_allow_headers": ["*"],
+            "access_control_allow_origin_regex": "https://.*\.my_org\.com",
+            "access_control_max_age": 1200,
+            "access_control_expose_headers": ["Content-Length"]
+        }
+    },
+)
+class InferenceService:
+
+    img_classify_service = bentoml.depends(ImageClassifyService)
+    text_classify_service = bentoml.depends(TextClassifyService)
+    def __init__(self):
+        print("Init")
+    
+    @bentoml.api(route="/test")
+    async def test(self, req: BaseRequest) -> dict:
+        print(req)
+        print(req.model_extra)
+        
+        params = combine_extra_request_fields(req)
+        if req.task == "IMAGE_CLASSIFICATION":
+            res = self.img_classify_service.test_res(params["params"])
+        elif req.task == "TEXT_CLASSIFICATION":
+            res = self.text_classify_service.test_res(combined_fields)
+            
+        return res
+    
+    
+    @bentoml.api(route="deploy")
+    async def deploy(self, req: DeployRequest):
+        match(req.task):
+            case "IMAGE_CLASSIFICATION":
+                res = await self.img_classify_service.deploy(req)
+            case "TEXT_CLASSIFICATION":
+                res = await self.text_classify_service.deploy(req)
+        return res
+    
+    @bentoml.api(route="/predict")
+    async def predict(self, req: BaseRequest) -> dict:
+        
+        combined_params = combine_extra_request_fields(req)
+        
+        if req.task == "IMAGE_CLASSIFICATION":
+            res = await self.img_classify_service.predict(combined_params["params"])
+        elif req.task == "TEXT_CLASSIFICATION":
+            res = await self.text_classify_service.predict(combined_params["params"])
+        print(res)
+        return {"status": "success"}

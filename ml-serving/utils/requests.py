@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
 from typing import List, Annotated
 from bentoml.validators import ContentType
@@ -6,6 +6,9 @@ from bentoml.validators import ContentType
 
 
 class BaseRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='allow',
+    )
     userEmail: str = Field(description="User Email")
     projectName: str = Field(description="Project name")
     runName: str = Field(description="Run name")
@@ -18,6 +21,7 @@ class DeployRequest(BaseRequest):
 class ImagePredictionRequest(BaseRequest):
     images: List[str] = Field(description="Image file paths")
     task: str = Field(description="task to be performed", default="IMAGE_CLASSIFICATION")
+    
 class ImageExplainRequest(BaseRequest):
     image: str = Field(description="Image file path")
     image_explained_path: str = Field(description="path to store the explained image")

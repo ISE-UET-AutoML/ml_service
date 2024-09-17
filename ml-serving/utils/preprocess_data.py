@@ -67,3 +67,9 @@ def preprocess_text(text_input, text_col=None):
 
     return token_ids, segment_ids, valid_length
     
+
+def combine_extra_request_fields(params):
+    required_fields = params.dict()
+    extra_fields = params.__dict__.get("model_extra", {})
+    combined_fields = {**required_fields, **extra_fields}
+    return {"params": combined_fields}

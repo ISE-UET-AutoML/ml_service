@@ -185,3 +185,4 @@ docker-compose.yml
 testing/
 
 environment.yml
+autoML.code-workspace

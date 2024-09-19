@@ -14,6 +14,7 @@ from settings.config import TEMP_DIR
 import gdown
 
 from utils.dataset_utils import (
+    download_dataset2,
     find_latest_model,
     split_data,
     create_csv,
@@ -22,68 +23,54 @@ from utils.dataset_utils import (
     download_dataset,
 )
 
+from autogluon.tabular import TabularPredictor
 
 def train(task_id: str, request: dict):
     print("Tabular Training request received")
     temp_dataset_path = ""
     start = perf_counter()
     print("Training request received")
-    request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
-    request["training_argument"]["ag_fit_args"]["presets"] = request["presets"]
+    # request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
+    # request["training_argument"]["ag_fit_args"]["presets"] = request["presets"]
     try:
         user_dataset_path = (
-            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset"
+            f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset/"
         )
-        train_path = f"{user_dataset_path}/data.csv"
-        if os.path.exists(user_dataset_path) == False:
-            download_dataset(
-                user_dataset_path,
-                False,
-                request,
-                request["dataset_download_method"],
-            )
-        download_end = perf_counter()
-        print("Download dataset successfully")
-
+        os.makedirs(user_dataset_path, exist_ok=True)
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
 
-        # split_data(Path(user_dataset_path), f"{user_dataset_path}/split/")
+        # TODO: download dataset in this function
+        train_df = download_dataset2(
+            user_dataset_path,
+            request["dataset_url"],
+            request["dataset_download_method"],
+        )
+        # train_df, test_df = train_test_split(train_df, test_size=0.2)
 
-        # # # TODO : User can choose ratio to split data @DuongNam
-        # # # assume user want to split data into 80% train, 10% val, 10% test
+        presets = request["presets"]
 
-        # create_csv(Path(f"{user_dataset_path}/split/train"),
-        #            Path(f"{user_dataset_path}/train.csv"))
-        # create_csv(Path(f"{user_dataset_path}/split/val"),
-        #            Path(f"{user_dataset_path}/val.csv"))
-        # create_csv(Path(f"{user_dataset_path}/split/test"),
-        #            Path(f"{user_dataset_path}/test.csv"))
-        # test_path=os.path.dirname(__file__)+"/titanic/test.csv"
-        # print("Split data successfully")
-        # remove_folders_except(Path(user_dataset_path), "split")
-        # print("Remove folders except split successfully")
+        # # training job của mình sẽ chạy ở đây
+        predictor = TabularPredictor(
+            label="label",
+            path=user_model_path,
+        )
 
-        print(request["training_argument"])
-        trainer = AutogluonTrainer(request["training_argument"])
-        # trainer = AutogluonTrainer()
+        predictor.fit(
+            train_data=train_df,
+            # tuning_data=val_data,
+            time_limit=request["training_time"],
+            presets=presets,
+            save_path=user_model_path,
+        )
 
-        #! target can change to any column in the dataset
-        # TODO: target column should be selected by user
-        target = request["label_column"]
-        print("Create trainer successfully")
-
-        model = trainer.train(target, train_path, 0.2, None, None, user_model_path)
-
-        if model is None:
-            raise ValueError("Error in training model")
-        print("Training model successfully")
+        # metrics = predictor.evaluate(test_data, metrics=request["metrics"])
+        # print("Training model successfully")
 
         end = perf_counter()
 
         return {
-            "validation_accuracy": 0,  #!
+            "metrics": "temp_metrics",
             "training_evaluation_time": end - start,
-            "model_download_time": download_end - start,
             "saved_model_path": user_model_path,
         }
 

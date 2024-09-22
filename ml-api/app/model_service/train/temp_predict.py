@@ -1,4 +1,3 @@
-import asyncio
 import base64
 from email.mime import image
 from io import StringIO
@@ -6,8 +5,6 @@ import re
 from typing import Optional, Union
 from urllib import response
 from zipfile import ZipFile
-
-import requests
 from fastapi import APIRouter, File, Form, UploadFile
 import pandas
 from sympy import false, use
@@ -17,13 +14,12 @@ from autogluon.tabular import TabularPredictor
 from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 import joblib
-from settings.config import TEMP_DIR, IMG_CLASSIFY_SERVICE_URL, TEXT_CLASSIFY_SERVICE_URL
+from settings.config import TEMP_DIR
 import shutil
 import numpy as np
 import pandas as pd
 import uuid
 from typing import Annotated
-import json
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -94,12 +90,6 @@ async def load_tabular_model(
     return load_tabular_model_from_path(model_path)
 
 
-async def save_file(file, temp_folder):
-    temp_path = f"{temp_folder}/{file.filename}"
-    with open(temp_path, "wb") as buffer:
-        buffer.write(await file.read())
-    return "." + temp_path
-
 # image predict
 @router.post(
     "/image_classification/temp_predict",
@@ -107,83 +97,47 @@ async def save_file(file, temp_folder):
     description="Only use in dev and testing, not for production",
 )
 async def img_class_predict(
-    userEmail: str = Form(...),
-    projectName: str = Form(...),
-    runName: str = Form(...),
-    files: str = Form(...),
+    userEmail: str = Form("test-automl"),
+    projectName: str = Form("4-animal"),
+    runName: str = Form("ISE"),
+    files: list[UploadFile] = File(...),
 ):
     print(userEmail)
     print("Run Name:", runName)
 
-    print(files.split(","))
-
     try:
         predictions = []
-        # write the image to a temporary folder
+        # write the image to a temporary file
         temp_image_folder = f"{TEMP_DIR}/{userEmail}/{projectName}/temp_predict"
         os.makedirs(temp_image_folder, exist_ok=True)
 
-        # image_paths = []
-        image_paths = files.split(",")
+        temp_image_df = pd.DataFrame(columns=["image"])
+        for image in files:
+            temp_image_path = f"{temp_image_folder}/{image.filename}"
+            with open(temp_image_path, "wb") as buffer:
+                buffer.write(await image.read())
+            temp_image_df = temp_image_df._append(
+                {"image": temp_image_path}, ignore_index=True
+            )
 
-        # OLD WAYS
-        # temp_image_df = pd.DataFrame(columns=["image"])
-        # for image in files:
-        #     temp_image_path = f"{temp_image_folder}/{image.filename}"
-
-        #     image_paths.append("." + temp_image_path)
-        #     with open(temp_image_path, "wb") as buffer:
-        #         buffer.write(await image.read())
-        #     temp_image_df = temp_image_df._append(
-        #         {"image": temp_image_path}, ignore_index=True
-        #     )
-        # start_load = perf_counter()
-        # # TODO : Load model with any path
-        # model = await load_model(userEmail, projectName, runName)
-        # load_time = perf_counter() - start_load 
-        # inference_start = perf_counter()
-        # probas = model.predict_proba(temp_image_df, as_pandas=False, as_multiclass=True)
-
-        # NEW WAYS
         start_load = perf_counter()
-        # tasks = []
-
-        # for image in files:
-        #     tasks.append(save_file(image, temp_image_folder))
-        # # Wait for all images to be saved
-        # image_paths = await asyncio.gather(*tasks)
-        
-        with open(f"tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/metadata.json", "r") as f:
-            labels = json.load(f)['labels']
-
-
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
-        json_request = {
-            "userEmail": userEmail,
-            "projectName": projectName,
-            "runName": runName,
-            "images": image_paths,
-            "task": "IMAGE_CLASSIFICATION",   
-        }
         inference_start = perf_counter()
-        try:
-            probas = requests.post(f'{IMG_CLASSIFY_SERVICE_URL}/predict', json=json_request).json()
-        except Exception as e:
-            print(e)
-            return {"status": "failed", "message": "Prediction failed"}
-    
+        probas = model.predict_proba(temp_image_df, as_pandas=False, as_multiclass=True)
 
-        ####### BOTH
         for proba in probas:
             predictions.append(
                 {
                     "key": str(uuid.uuid4()),
-                    "class": labels[np.argmax(proba)],
+                    "class": str(model.class_labels[np.argmax(proba)]),
                     "confidence": round(float(max(proba)), 2),
                 }
             )
 
         return {
+            "status": "success",
             "message": "Prediction completed",
             "load_time": load_time,
             "inference_time": perf_counter() - inference_start,
@@ -191,9 +145,7 @@ async def img_class_predict(
         }
     except Exception as e:
         print(e)
-        return {"status": "failed", "message": "Prediction failed"}
     finally:
-        pass
         if os.path.exists(temp_image_folder):
             shutil.rmtree(temp_image_folder)
 
@@ -345,8 +297,8 @@ async def img_seg_predict(
     description="Only use in dev and testing, not for production",
 )
 async def text_predict(
-    userEmail: str = Form(...),
-    projectName: str = Form(...),
+    userEmail: str = Form("darklord1611"),
+    projectName: str = Form("66bdc72c8197a434278f525d"),
     runName: str = Form("ISE"),
     text_col: str = Form(
         "text", description="name of the text column in train.csv file"
@@ -357,69 +309,40 @@ async def text_predict(
     print("Run Name:", runName)
     print("File:", csv_file.filename)
 
-
     try:
-        # OLD WAYS
-        # if csv_file:
-        #     temp_csv_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.csv"
-        #     with open(temp_csv_path, "wb") as buffer:
-        #         buffer.write(await csv_file.read())
-
-        # start_load = perf_counter()
-        # # TODO : Load model with any path
-        # model = await load_model(userEmail, projectName, runName)
-        # load_time = perf_counter() - start_load
-        # inference_start = perf_counter()
-
-        # try:
-        #     pd_df = pd.read_csv(temp_csv_path)
-        #     for col in pd_df.columns:
-        #         if col.lower().__contains__("text") or col.lower().__contains__(
-        #             "sentence"
-        #         ):
-        #             text_col = col
-        #             break
-        # except Exception as e:
-        #     return {
-        #         "status": "failed",
-        #         "message": "bad request, maybe check your csv file",
-        #     }
-
-
-        # NEW WAYS
-        temp_csv_folder = f"{TEMP_DIR}/{userEmail}/{projectName}/temp_predict"
-        os.makedirs(temp_csv_folder, exist_ok=True)
+        if csv_file:
+            temp_csv_path = f"{TEMP_DIR}/{userEmail}/{projectName}/temp.csv"
+            with open(temp_csv_path, "wb") as buffer:
+                buffer.write(await csv_file.read())
 
         start_load = perf_counter()
-        tasks = []
-
-        tasks.append(save_file(csv_file, temp_csv_folder))
-        # Wait for all images to be saved
-        csv_paths = await asyncio.gather(*tasks)
-
-        pd_df = pd.read_csv(csv_paths[0][1:])
-
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
 
-        json_request = {
-            "userEmail": userEmail,
-            "projectName": projectName,
-            "runName": runName,
-            "text_file_path": csv_paths[0],
-            "text_col": text_col
-        }
+        try:
+            pd_df = pd.read_csv(temp_csv_path)
+            for col in pd_df.columns:
+                if col.lower().__contains__("text") or col.lower().__contains__(
+                    "sentence"
+                ):
+                    text_col = col
+                    break
+        except Exception as e:
+            return {
+                "status": "failed",
+                "message": "bad request, maybe check your csv file",
+            }
 
-        with open(f"tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/metadata.json", "r") as f:
-            labels = json.load(f)['labels']
-        probs = requests.post(f'{TEXT_CLASSIFY_SERVICE_URL}/predict', json=json_request).json()
         predictions = []
 
-        for i, prob in enumerate(probs):
+        probabilites = model.predict_proba({"text": pd_df[text_col].values})
+        for i, prob in enumerate(probabilites):
             predictions.append(
                 {
                     "sentence": pd_df[text_col].values[i],
-                    "class": labels[np.argmax(prob)],
+                    "class": str(model.class_labels[np.argmax(prob)]),
                     "confidence": round(float(max(prob)), 2),
                 }
             )

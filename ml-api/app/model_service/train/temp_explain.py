@@ -1,7 +1,6 @@
 import base64
 from email.mime import image
 from io import StringIO
-import json
 import re
 from typing import Optional, Union
 from urllib import response
@@ -16,14 +15,12 @@ from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 from .explainers.TextExplainer import TextExplainer
 import joblib
-from settings.config import TEMP_DIR, IMG_CLASSIFY_SERVICE_URL, TEXT_CLASSIFY_SERVICE_URL
+from settings.config import TEMP_DIR
 import shutil
 import numpy as np
 from time import time
 from .ExplainRequest import TextExplainRequest
 from pydantic import Field
-import asyncio
-import requests
 
 from utils.dataset_utils import (
     find_latest_model,
@@ -94,14 +91,6 @@ async def load_tabular_model(
     return load_tabular_model_from_path(model_path)
 
 
-
-
-async def save_image(image, temp_image_folder):
-    temp_image_path = f"{temp_image_folder}/{image.filename}"
-    with open(temp_image_path, "wb") as buffer:
-        buffer.write(await image.read())
-    return "." + temp_image_path
-
 # image explain
 @router.post(
     "/image_classification/explain",
@@ -127,66 +116,45 @@ async def img_explain(
         os.makedirs(Path(temp_explain_image_path).parent, exist_ok=True)
         os.makedirs(temp_directory_path, exist_ok=True)
 
+        with open(temp_image_path, "wb") as buffer:
+            buffer.write(await image.read())
 
-        # OLD CODE
-        # with open(temp_image_path, "wb") as buffer:
-        #     buffer.write(await image.read())
-        # start_load = perf_counter()
-        # # TODO : Load model with any path
-        # model = await load_model(userEmail, projectName, runName)
-        # load_time = perf_counter() - start_load
-        # inference_start = perf_counter()
-
-        # explainer = ImageExplainer(
-        #     "lime",
-        #     model,
-        #     temp_directory_path,
-        #     num_samples=100,
-        #     batch_size=50,
-        #     class_names=[label for label in model.class_labels],
-        # )
-        # explainer.explain(temp_image_path, temp_explain_image_path)
-
-        # NEW CODE
-        tasks = []
-        tasks.append(save_image(image, temp_directory_path))
         start_load = perf_counter()
-        image_path = await asyncio.gather(*tasks) # temporary workaround 
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
-
-        json_request = {
-            "method": "lime",
-            "userEmail": userEmail,
-            "projectName": projectName,
-            "runName": runName,
-            "image": image_path[0],
-            "image_explained_path": "." + temp_explain_image_path
-        }
         inference_start = perf_counter()
-        response = requests.post(f"{IMG_CLASSIFY_SERVICE_URL}/explain", json=json_request)
-        print(response.json())
-        # END NEW CODE
 
-        inference_time = perf_counter() - inference_start
+        explainer = ImageExplainer(
+            "lime",
+            model,
+            temp_directory_path,
+            num_samples=100,
+            batch_size=50,
+            class_names=[label for label in model.class_labels],
+        )
+        try:
+            explainer.explain(temp_image_path, temp_explain_image_path)
+            # TODO: change return format, base64 string usually very slow
+            with open(temp_explain_image_path, "rb") as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
-        # TODO: change return format, base64 string usually very slow
-        with open(temp_explain_image_path, "rb") as image_file:
-            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+        except Exception as e:
+            print(e)
+
         return {
             "status": "success",
             "message": "Explanation completed",
             "load_time": load_time,
-            "inference_time": inference_time,
-            "encode_time": perf_counter() - inference_time,
-            "explain_image": encoded_image,
+            "inference_time": perf_counter() - inference_start,
+            "explanation": encoded_image,
         }
     except Exception as e:
         print(e)
-        return {"status": "failed", "message": "Explanation failed"}
     finally:
         print("Cleaning up")
-        # if os.path.exists(temp_directory_path):
-        #     shutil.rmtree(temp_directory_path)
+        if os.path.exists(temp_directory_path):
+            shutil.rmtree(temp_directory_path)
 
 
 # text explain
@@ -196,8 +164,8 @@ async def img_explain(
     description="Only use in dev and testing, not for production",
 )
 async def text_explain(
-    userEmail: str = Form(...),
-    projectName: str = Form(...),
+    userEmail: str = Form("darklord1611"),
+    projectName: str = Form("66bdc72c8197a434278f525d"),
     runName: str = Form("ISE"),
     text: str = Form("The quick brown fox jumps over the lazy dog"),
 ):
@@ -214,25 +182,16 @@ async def text_explain(
     start_time = time()
     try:
         start_load = perf_counter()
-        with open(f"tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/metadata.json", "r") as f:
-            labels = json.load(f)['labels']
+        # TODO : Load model with any path
+        model = await load_model(userEmail, projectName, runName)
         load_time = perf_counter() - start_load
-
         inference_start = perf_counter()
 
-        json_request = {
-            "userEmail": userEmail,
-            "projectName": projectName,
-            "runName": runName,
-            "text": text,
-            "method": "lime",
-            "class_names": labels
-        }
-
-
+        explainer = TextExplainer(
+            "lime", model, class_names=[label for label in model.class_labels]
+        )
         try:
-            response = requests.post(f'{TEXT_CLASSIFY_SERVICE_URL}/explain', json=json_request).json()
-
+            explanations = explainer.explain(text)
         except Exception as e:
             print(e)
 
@@ -241,7 +200,7 @@ async def text_explain(
             "message": "Explanation completed",
             "load_time": load_time,
             "inference_time": perf_counter() - inference_start,
-            "explanations": response["explanation"],
+            "explanation": explanations,
         }
     except Exception as e:
         print(e)

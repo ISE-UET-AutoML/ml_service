@@ -25,6 +25,7 @@ from utils.dataset_utils import (
 
 from autogluon.tabular import TabularPredictor
 
+
 def train(task_id: str, request: dict):
     print("Tabular Training request received")
     temp_dataset_path = ""
@@ -60,7 +61,6 @@ def train(task_id: str, request: dict):
             # tuning_data=val_data,
             time_limit=request["training_time"],
             presets=presets,
-            save_path=user_model_path,
         )
 
         # metrics = predictor.evaluate(test_data, metrics=request["metrics"])

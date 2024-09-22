@@ -111,7 +111,7 @@ async def train_tabular_classification(request: SimpleTrainRequest):
     }
 
     task_id = celery_client.send_task(
-        "model_service.tabular_classification.train",
+        "model_service.tabular_classify.train",
         kwargs={
             "request": payload,
         },

@@ -1,38 +1,30 @@
-from cProfile import label
-from pathlib import Path
-from urllib import request
-from celery import shared_task
-import uuid
-import time
-from .tabular.autogluon_trainer import AutogluonTrainer
-from mq_main import redis
 from time import perf_counter
-import os
-import uuid
+from autogluon.multimodal import MultiModalPredictor
 import joblib
 from settings.config import TEMP_DIR
-import gdown
 
 from utils.dataset_utils import (
-    download_dataset2,
     find_latest_model,
     split_data,
     create_csv,
     remove_folders_except,
     create_folder,
     download_dataset,
+    download_dataset2,
 )
-
-from autogluon.tabular import TabularPredictor
+from utils.train_utils import find_in_current_dir
+import os
+from pathlib import Path
+import pandas as pd
 
 
 def train(task_id: str, request: dict):
-    print("Tabular Training request received")
-    temp_dataset_path = ""
+    print("task_id:", task_id)
+    print("request:", request)
+    print("MultiModal Training request received")
     start = perf_counter()
-    print("Training request received")
-    # request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
-    # request["training_argument"]["ag_fit_args"]["presets"] = request["presets"]
+    request["training_argument"]["ag_fit_args"]["time_limit"] = request["training_time"]
+    request["training_argument"]["ag_fit_args"]["presets"] = request["presets"]
     try:
         user_dataset_path = (
             f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset/"
@@ -51,8 +43,9 @@ def train(task_id: str, request: dict):
         presets = request["presets"]
 
         # # training job của mình sẽ chạy ở đây
-        predictor = TabularPredictor(
-            label="label",
+        predictor = MultiModalPredictor(
+            label=request["label_column"],
+            problem_type=request["problem_type"],
             path=user_model_path,
         )
 
@@ -61,6 +54,10 @@ def train(task_id: str, request: dict):
             # tuning_data=val_data,
             time_limit=request["training_time"],
             presets=presets,
+            save_path=user_model_path,
+            hyperparameters=request["training_argument"]["ag_fit_args"][
+                "hyperparameters"
+            ],
         )
 
         # metrics = predictor.evaluate(test_data, metrics=request["metrics"])
@@ -77,6 +74,7 @@ def train(task_id: str, request: dict):
     except Exception as e:
         print(e)
         # raise HTTPException(status_code=500, detail=f"Error in downloading or extracting folder: {str(e)}")
-    finally:
-        if os.path.exists(temp_dataset_path):
-            os.remove(temp_dataset_path)
+    # finally:
+    # if os.path.exists(temp_dataset_path):
+    #    os.remove(temp_dataset_path)
+    # return {}

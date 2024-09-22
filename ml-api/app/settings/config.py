@@ -66,24 +66,7 @@ ACCESS_TOKEN = BACKEND["ACCESS_TOKEN_SECRET"]
 REFRESH_TOKEN = BACKEND["REFRESH_TOKEN_SECRET"]
 
 # =========================================================================
-#                          LABEL STUDIO INFORMATION
+#                           DATASERVICE INFORMATION
 # =========================================================================
-LABEL_STUDIO = cfg["label_studio"]
-LABEL_STUDIO_HOST = LABEL_STUDIO["host"]
-LABEL_STUDIO_ACCESS_TOKEN = LABEL_STUDIO["ACCESS_TOKEN"]
-
-
-# =========================================================================
-#                           BENTOML INFORMATION
-# =========================================================================
-BENTOML = cfg["bentoml"]
-IMG_CLASSIFY_SERVICE_URL= BENTOML["image_classify_url"]
-TEXT_CLASSIFY_SERVICE_URL= BENTOML["text_classify_url"]
-
-
-# from label_studio_sdk.client import LabelStudio
-
-# label_studio_client = LabelStudio(
-#     base_url=LABEL_STUDIO_HOST, api_key=LABEL_STUDIO_ACCESS_TOKEN
-# )
-
+DATASERVICE = cfg["data_service"]
+DATASERVICE_HOST = DATASERVICE["host"]

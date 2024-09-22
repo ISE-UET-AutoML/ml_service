@@ -169,7 +169,11 @@ class AutogluonTrainer(object):
         )
 
     def train(
-        self, label: str, train_data_path: Path, val_data_path: Path, model_path: Path
+        self,
+        label: str,
+        train_data_path: Path,
+        val_data_path: Path | None,
+        model_path: Path,
     ) -> Union[MultiModalPredictor, None]:
         try:
             if model_path.exists():
@@ -185,8 +189,8 @@ class AutogluonTrainer(object):
             train_data = pd.read_csv(train_data_path)
 
             predictor.fit(
-                train_data=train_data,
-                tuning_data=str(val_data_path),
+                train_data=pd.read_csv(train_data_path),
+                # tuning_data=str(val_data_path),
                 save_path=str(model_path),
                 **self.fit_args,
             )

@@ -57,3 +57,9 @@ BACKEND = cfg["backend"]
 BACKEND_HOST = BACKEND["host"]
 ACCESS_TOKEN = BACKEND["ACCESS_TOKEN_SECRET"]
 REFRESH_TOKEN = BACKEND["REFRESH_TOKEN_SECRET"]
+
+# =========================================================================
+#                           DATASERVICE INFORMATION
+# =========================================================================
+DATASERVICE = cfg["data_service"]
+DATASERVICE_HOST = DATASERVICE["host"]

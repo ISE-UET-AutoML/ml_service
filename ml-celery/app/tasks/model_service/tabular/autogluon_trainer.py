@@ -108,7 +108,20 @@ class AutogluonTrainer(object):
 
             # acc=history.get('validation_performance')
             # loss=history.get('validation_loss')
+            
+            exported_path = predictor.export_onnx(data=train_df[0:1], path=str(model_path), batch_size=4, truncate_long_and_double=True)
+
+            print(predictor.eval_metric)
+            
+            metadata = {
+                "labels": predictor.class_labels.tolist(),
+            }
+            with open(f"{model_path}/metadata.json", "w") as f:
+                json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
+            
+            
             self._logger.info(f"Training completed. Model saved to {model_path}")
+            self._logger.info(f"Export completed. Model saved to {exported_path}")
             return predictor
         except ValueError as ve:
             self._logger.error(f"Value Error: {ve}")

@@ -11,9 +11,9 @@ from lime import lime_image
 import matplotlib.pyplot as plt
 from skimage.segmentation import mark_boundaries
 from .BaseExplainer import BaseExplainer 
-from utils.preprocess_data import preprocess_image, softmax
+from utils.preprocess_data import preprocess_image, softmax, get_image_filename
 import onnxruntime as ort
-
+import requests
 # supported methods: LIME, SHAP
 
 
@@ -37,12 +37,14 @@ class ImageExplainer(BaseExplainer):
     def preprocess(self, instance):
         match(self.method):
             case "lime":
-                return imread(instance)
+                if instance.startswith("http"):
+                    img = Image.open(requests.get(instance, stream=True).raw)
+                return np.array(img), get_image_filename(instance)
             case "shap":
                 temp_df = pd.DataFrame(columns=["image"])
                 temp_df = temp_df._append({"image": instance}, ignore_index=True)
                 temp_df['image'] = temp_df['image'].apply(lambda x: cv2.resize(imread(x), (IMAGE_SIZE, IMAGE_SIZE)))
-                return np.stack(temp_df['image'].values, axis=0)[0:1]
+                return np.stack(temp_df['image'].values, axis=0)[0:1], get_image_filename(instance)
             case _:
                 warnings.warn("Method not supported")
                 return None
@@ -56,9 +58,12 @@ class ImageExplainer(BaseExplainer):
 
 
     # store the explanation in the form of an image with mask
-    def explain(self, instance, instance_explain_path):
-        image_input = self.preprocess(instance)
+    def explain(self, instance, instance_explain_folder):
+        # TEMPORARY
+        image_input, image_filename = self.preprocess(instance)
         image_explanation = None
+        image_explained_path = f"{instance_explain_folder}/{image_filename}"
+        
         if self.method == "lime":
             try:
                 explanation = self.explainer.explain_instance(image_input, self.predict_proba, hide_color=0, num_samples=self.num_samples, batch_size=self.batch_size)
@@ -66,8 +71,7 @@ class ImageExplainer(BaseExplainer):
 
                 # Display the explanation
                 image_explanation = mark_boundaries(temp, mask, mode="thick")
-                plt.imsave(instance_explain_path, image_explanation)
-                return None
+                plt.imsave(image_explained_path, image_explanation)
             except Exception as e:
                 print(e)
                 print("Error in explaining image")
@@ -75,9 +79,9 @@ class ImageExplainer(BaseExplainer):
             try:
                 shap_values = self.explainer(image_input, max_evals=self.num_samples, batch_size=self.batch_size, outputs=shap.Explanation.argsort.flip[:len(self.class_names)])
                 shap.image_plot(shap_values, show=False)
-                plt.savefig(instance_explain_path, format='jpg')
+                plt.savefig(image_explained_path, format='jpg')
             except Exception as e:
                 print(e)
                 print("Error in explaining image")
 
-        return None
+        return image_explained_path

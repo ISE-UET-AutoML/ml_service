@@ -20,6 +20,11 @@ class BaseService():
         #     return None
         pass
 
+    def load_model_metadata(self, userEmail: str, projectName: str, runName: str):
+        with open(f"../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/metadata.json", "r") as f:
+            labels = json.load(f)['labels']
+        self.model_metadata = {"class_names": labels}
+        return None
 
 
     def deploy(self, params: DeployRequest) -> dict:
@@ -30,6 +35,7 @@ class BaseService():
         task = params.task
         try:
             self.load_model_and_model_info(userEmail, projectName, runName)
+            self.load_model_metadata(userEmail, projectName, runName)
             self.warmup(task)
         except Exception as e:
             print(e)
@@ -47,8 +53,11 @@ class BaseService():
         
     # FIX RELATIVE PATH ERROR
     def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str) -> None:
+    
+        
         try:
-            self.ort_sess = ort.InferenceSession(f'tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx', providers=['AzureExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'])
+            self.ort_sess = ort.InferenceSession(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx', 
+                                                 providers=['AzureExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'])
             self.input_names = [in_param.name for in_param in self.ort_sess.get_inputs()]
             print("Model deploy successfully")
             return None

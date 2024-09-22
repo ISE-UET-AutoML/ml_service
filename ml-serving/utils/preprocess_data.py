@@ -8,6 +8,7 @@ from time import time
 import pandas as pd
 from transformers import ElectraTokenizer
 import json
+from urllib.parse import urlparse
 
 IMAGE_SIZE = 224
 
@@ -73,3 +74,8 @@ def combine_extra_request_fields(params):
     extra_fields = params.__dict__.get("model_extra", {})
     combined_fields = {**required_fields, **extra_fields}
     return {"params": combined_fields}
+
+
+def get_image_filename(url):
+    parsed_url = urlparse(url)
+    return os.path.basename(parsed_url.path)

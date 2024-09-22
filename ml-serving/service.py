@@ -15,6 +15,12 @@ from explainers.ImageExplainer import ImageExplainer
 from explainers.TextExplainer import TextExplainer
 from settings import FRONTEND_URL, BACKEND_URL, ML_SERVICE_URL, INFERENCE_SERVICE_PORT
 from services.base_service import BaseService
+import uuid
+from time import perf_counter
+import base64
+import pandas as pd
+import numpy as np
+import os
 
 @bentoml.service(
     resources={"cpu": "1"},
@@ -45,42 +51,72 @@ class ImageClassifyService(BaseService):
         return {"status": "success", "task": "image_classification"}
 
     @bentoml.api()
-    async def predict(self, params: ImagePredictionRequest) -> ndarray:
-
+    async def predict(self, params: ImagePredictionRequest) -> dict:
+        
+        start_load = perf_counter()
         # FIX THIS
         self.check_already_deploy(params)
-        start_time = time()
+        predictions = []
+        
         try:
             data = preprocess_image(params.images)
-            predictions = self.predict_proba(data)
-            print("Prediction successful")
+            load_time = perf_counter() - start_load
+            
+            inference_start = perf_counter()
+            probas = self.predict_proba(data)
+            
+            for proba in probas:
+                predictions.append(
+                {
+                    "key": str(uuid.uuid4()),
+                    "class": self.model_metadata["class_names"][np.argmax(proba)],
+                    "confidence": round(float(max(proba)), 2),
+                }
+            )
+                
         except Exception as e:
             print(e)
             print("Prediction failed")
-            return "Prediction failed"
-        end_time = time()
-        print(f"Time taken: {end_time - start_time}")
+            return {"status": "failed", "message": "Prediction failed"}
 
-        return predictions
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "inference_time": perf_counter() - inference_start,
+            "predictions": predictions,
+        }
     
     @bentoml.api()
     async def explain(self, params: ImageExplainRequest) -> dict:
 
+        start_load = perf_counter()
         # FIX THIS
         self.check_already_deploy(params)
+        os.makedirs("./tmp", exist_ok=True)
 
-        start_time = time()
         try:
-            explainer = ImageExplainer(params['method'], self.ort_sess, num_samples=200, batch_size=32)
-            explainer.explain(params['image'], params['image_explained_path'])
+            explainer = ImageExplainer(params.method, self.ort_sess, num_samples=100, batch_size=32)
+            load_time = perf_counter() - start_load
+            
+            inference_start = perf_counter()
+            image_explained_path = explainer.explain(params.image, "./tmp")
+            inference_time = perf_counter() - inference_start
+            
+            with open(image_explained_path, "rb") as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
         except Exception as e:
             print(e)
             print("Prediction failed")
             return {"status": "failed", "message": "Explanation failed"}
-        end_time = time()
-        print(f"Time taken: {end_time - start_time}")
 
-        return {"status": "success"}
+        return {
+            "status": "success",
+            "message": "Explanation completed",
+            "load_time": load_time,
+            "inference_time": inference_time,
+            "explanation": encoded_image,
+        }
 
 
 
@@ -103,51 +139,74 @@ class TextClassifyService(BaseService):
 
 
     @bentoml.api()
-    def deploy(self, params: DeployRequest) -> dict:
+    async def deploy(self, params: DeployRequest) -> dict:
         response = super().deploy(params)
         return response
     
-    @bentoml.api()
-    def test_res(self, params: TextPredictionRequest) -> dict:
-        print(params)
-
-        return {"status": "success", "task": "text_classification"}
 
     @bentoml.api()
-    def predict(self, params: TextPredictionRequest) -> ndarray:
-
+    async def predict(self, params: TextPredictionRequest) -> dict:
+        
+        start_load = perf_counter()
         # FIX THIS
         self.check_already_deploy(params)
-
-        data = preprocess_text(params.text_file_path, params.text_col)
+        predictions = []
         try:
-            predictions = self.predict_proba(data)
-            print(predictions)
-            print("Prediction successful")
+            data = preprocess_text(params.text_file_path, params.text_col)
+            text_df = pd.read_csv(params.text_file_path)
+            load_time = perf_counter() - start_load
+            
+            inference_start = perf_counter()
+            probas = self.predict_proba(data)
+            
+            for i, proba in enumerate(probas):
+                predictions.append(
+                    {
+                        "sentence": text_df[params.text_col].values[i],
+                        "class": self.model_metadata["class_names"][np.argmax(proba)],
+                        "confidence": round(float(max(proba)), 2),
+                    }
+                )
         except Exception as e:
             print(e)
             print("Prediction failed")
+            return {"status": "failed", "message": "Prediction failed"}
 
-        return predictions
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "inference_time": perf_counter() - inference_start,
+            "predictions": predictions,
+        }
     
     @bentoml.api()
-    def explain(self, params: TextExplainRequest) -> dict:
-
+    async def explain(self, params: TextExplainRequest) -> dict:
+        
+        start_load = perf_counter()
         # FIX THIS
-        self.check_already_deploy(**params)
-
-        start_time = time()
+        self.check_already_deploy(params)
+        print(self.model_metadata["class_names"])
         try:
-            explainer = TextExplainer(params.method, self.ort_sess, class_names=params["class_names"])
+            explainer = TextExplainer(params.method, self.ort_sess, class_names=self.model_metadata["class_names"])
+            load_time = perf_counter() - start_load
+            inference_start = perf_counter()
+            
             explanations = explainer.explain(params.text)
+            inference_time = perf_counter() - inference_start
+            
         except Exception as e:
             print(e)
             print("Prediction failed")
             return {"status": "failed", "message": "Explanation failed"}
-        end_time = time()
-        print(f"Time taken: {end_time - start_time}")
 
-        return {"status": "success", "explanation": explanations}
+        return {
+            "status": "success",
+            "message": "Explanation completed",
+            "load_time": load_time,
+            "inference_time": inference_time,
+            "explanation": explanations,
+        }
     
 
 
@@ -174,6 +233,7 @@ class InferenceService:
     text_classify_service = bentoml.depends(TextClassifyService)
     def __init__(self):
         print("Init")
+        
     
     @bentoml.api(route="/test")
     async def test(self, req: BaseRequest) -> dict:
@@ -189,7 +249,7 @@ class InferenceService:
         return res
     
     
-    @bentoml.api(route="deploy")
+    @bentoml.api(route="/deploy")
     async def deploy(self, req: DeployRequest):
         match(req.task):
             case "IMAGE_CLASSIFICATION":
@@ -207,5 +267,15 @@ class InferenceService:
             res = await self.img_classify_service.predict(combined_params["params"])
         elif req.task == "TEXT_CLASSIFICATION":
             res = await self.text_classify_service.predict(combined_params["params"])
-        print(res)
-        return {"status": "success"}
+        return res
+    
+    @bentoml.api(route="/explain")
+    async def explain(self, req: BaseRequest) -> dict:
+        
+        combined_params = combine_extra_request_fields(req)
+        
+        if req.task == "IMAGE_CLASSIFICATION":
+            res = await self.img_classify_service.explain(combined_params["params"])
+        elif req.task == "TEXT_CLASSIFICATION":
+            res = await self.text_classify_service.explain(combined_params["params"])
+        return res

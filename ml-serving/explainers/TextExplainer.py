@@ -73,7 +73,7 @@ class TextExplainer(BaseExplainer):
             shap_values = self.explainer(data['text'][0:1], max_evals=100, batch_size=20)
             return shap.plots.text(shap_values, display=False)
         elif self.method == "lime":
-            exp = self.explainer.explain_instance(data, self.predict_proba, num_features=20, num_samples=3000, labels=[i for i in range(len(self.class_names))])
+            exp = self.explainer.explain_instance(data, self.predict_proba, num_features=20, num_samples=2000, labels=[i for i in range(len(self.class_names))])
             return self.postprocess(exp)
         
         return "Method not supported"

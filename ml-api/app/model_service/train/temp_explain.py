@@ -147,7 +147,7 @@ async def img_explain(
             "message": "Explanation completed",
             "load_time": load_time,
             "inference_time": perf_counter() - inference_start,
-            "explain_image": encoded_image,
+            "explanation": encoded_image,
         }
     except Exception as e:
         print(e)
@@ -200,7 +200,7 @@ async def text_explain(
             "message": "Explanation completed",
             "load_time": load_time,
             "inference_time": perf_counter() - inference_start,
-            "explanations": explanations,
+            "explanation": explanations,
         }
     except Exception as e:
         print(e)

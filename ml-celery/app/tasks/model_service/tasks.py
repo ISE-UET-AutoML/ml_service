@@ -48,6 +48,7 @@ def image_classify_train(self, request: dict):
 @shared_task(
     bind=True,
     name="model_service.tabular_classify.train",
+    base=BaseTrainTask,
 )
 def tabular_classify_train(self, request: dict):
     return _tabular_classify.train(self.request.id, request)

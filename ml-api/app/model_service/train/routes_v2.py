@@ -91,3 +91,34 @@ async def train_text_prediction(request: SimpleTrainRequest):
         "task_id": str(task_id),
         "send_status": "SUCCESS",
     }
+
+
+@router.post("/v2/tabular_classification", tags=["v2"])
+async def train_tabular_classification(request: SimpleTrainRequest):
+    payload = {
+        "userEmail": request.userEmail,
+        "projectName": request.projectId,
+        "training_time": request.training_time,
+        "runName": request.runName,
+        "presets": request.presets,
+        "dataset_url": request.ds_projectId,
+        "dataset_download_method": "data_service",
+        "label_column": "label",
+        "training_argument": {},
+        "problem_type": None,
+        "image_cols": [],
+        "metrics": ["acc", "f1", "precision", "recall", "roc_auc"],
+    }
+
+    task_id = celery_client.send_task(
+        "model_service.tabular_classify.train",
+        kwargs={
+            "request": payload,
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }

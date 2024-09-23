@@ -156,15 +156,17 @@ async def img_class_predict(
     description="Only use in dev and testing, not for production",
 )
 async def tab_predict(
-    userEmail: str = Form("test-automl"),
-    projectName: str = Form("titanic"),
-    runName: str = Form("ISE"),
-    csv_file: UploadFile = File(...),
+    userEmail: str = Form(...),
+    projectName: str = Form(...),
+    runName: str = Form(...),
+    data_path: str = Form(...),
 ):
     print(userEmail)
     print(runName)
+    print(data_path)
+    
     try:
-        df = pandas.read_csv(csv_file.file)
+        df = pandas.read_csv(data_path)
         start_load = perf_counter()
         # TODO : Load model with any path
 
@@ -175,11 +177,20 @@ async def tab_predict(
         print(df.head())
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        predictions = model.predict(df, as_pandas=True)
+        predictions = []
         try:
-            proba: pandas.DataFrame = model.predict_proba(
+            probas = model.predict_proba(
                 df, as_pandas=True, as_multiclass=True
             )
+            
+            for proba in probas:
+                predictions.append(
+                    {
+                        "key": str(uuid.uuid4()),
+                        "class": model.class_labels[np.argmax(proba)],
+                        "confidence": round(float(max(proba)), 2),
+                    }
+                )
         except Exception as e:
             return {
                 "status": "success",

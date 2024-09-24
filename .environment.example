@@ -1,0 +1,38 @@
+[project]
+name = ML service
+ml_api_port = PORT_MLS
+ml_api_host = 0.0.0.0
+
+; if run on docker, rename the host to the container name
+[redis]
+host = localhost
+port = PORT_REDIS
+pass = password
+db = 0
+
+
+[rabbitmq]
+host = localhost
+post = PORT_RABBITMQ
+user = guest
+pass = guest
+vhost = 
+
+
+[celery]
+query = ml_celery
+queue = ml_celery
+
+[gcloud]
+GCP_CREDENTIALS=./service-account.json
+
+[tensorboard]
+port=PORT_TENSORBOARD
+
+[backend]
+host=http://localhost:PORT_BE
+ACCESS_TOKEN_SECRET=b9ca3961b32507a58fbe5a6975762a40fc17042f7721e0bc91327731ed4b5604dc558eff855dd726319499c4d140b5bbc67338f1913a84687917f121d1105bab
+REFRESH_TOKEN_SECRET=fb664b6b7d530fcda166663f6049007cf46a2fb619bef36ee5bf342e8937a8f8f0788083a57efaac9be3dfcc0b110b21cd0acb53f796fc3d03b303fff354f810
+
+[data_service]
+host=http://localhost:PORT_DTS

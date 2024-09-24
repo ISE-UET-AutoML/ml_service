@@ -165,6 +165,7 @@ async def tab_predict(
     print(runName)
     print(data_path)
     
+    
     try:
         df = pandas.read_csv(data_path)
         start_load = perf_counter()
@@ -174,16 +175,16 @@ async def tab_predict(
         model = await load_tabular_model(userEmail, projectName, runName)
         print("Model loaded")
 
-        print(df.head())
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         predictions = []
         try:
             probas = model.predict_proba(
-                df, as_pandas=True, as_multiclass=True
+                df, as_pandas=False, as_multiclass=True
             )
             
             for proba in probas:
+                print(proba)
                 predictions.append(
                     {
                         "key": str(uuid.uuid4()),
@@ -192,21 +193,13 @@ async def tab_predict(
                     }
                 )
         except Exception as e:
-            return {
-                "status": "success",
-                "message": "Prediction completed",
-                "load_time": load_time,
-                "proba": "Not a classification problem",
-                "inference_time": perf_counter() - inference_start,
-                "predictions": predictions.to_csv(),
-            }
+            print(e)
         return {
             "status": "success",
             "message": "Prediction completed",
             "load_time": load_time,
-            "proba": proba.to_csv(),
             "inference_time": perf_counter() - inference_start,
-            "predictions": predictions.to_csv(),
+            "predictions": predictions,
         }
     except Exception as e:
         print(e)

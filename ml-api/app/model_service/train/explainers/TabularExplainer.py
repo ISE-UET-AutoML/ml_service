@@ -11,11 +11,10 @@ class TabularExplainer(BaseExplainer):
         super().__init__(model)
         self.method = method
         self.class_names = class_names
-        self.class_col = "class"
         self.num_samples = num_samples
         
         if sample_data_path is not None:
-            self.sample_data_without_label = pd.read_csv(sample_data_path).drop(columns=[self.class_col]).sample(n=100)
+            self.sample_data_without_label = pd.read_csv(sample_data_path)
             self.feature_names = self.sample_data_without_label.columns
         
         if method == "shap":

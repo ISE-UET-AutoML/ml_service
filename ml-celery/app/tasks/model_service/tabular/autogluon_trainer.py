@@ -109,7 +109,6 @@ class AutogluonTrainer(object):
             # acc=history.get('validation_performance')
             # loss=history.get('validation_loss')
             
-            exported_path = predictor.export_onnx(data=train_df[0:1], path=str(model_path), batch_size=4, truncate_long_and_double=True)
 
             print(predictor.eval_metric)
             
@@ -120,11 +119,10 @@ class AutogluonTrainer(object):
                 json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
             
             # save sample data for data distribution
-            train_df.sample(n=100).to_csv(f"{model_path}/sample_data.csv", index=False)
+            train_df.drop(columns=[label]).sample(n=100).to_csv(f"{model_path}/sample_data.csv", index=False)
             
             
             self._logger.info(f"Training completed. Model saved to {model_path}")
-            self._logger.info(f"Export completed. Model saved to {exported_path}")
             return predictor
         except ValueError as ve:
             self._logger.error(f"Value Error: {ve}")

@@ -232,6 +232,7 @@ async def tab_explain(
         start_load = perf_counter()
         # TODO : Load model with any path
         model = await load_tabular_model(userEmail, projectName, runName)
+        
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
         

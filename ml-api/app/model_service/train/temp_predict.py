@@ -168,6 +168,7 @@ async def tab_predict(
     
     try:
         df = pandas.read_csv(data_path)
+        df.columns = ['data-VAL-' + col for col in df.columns]
         start_load = perf_counter()
         # TODO : Load model with any path
 

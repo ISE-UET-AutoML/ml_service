@@ -237,9 +237,10 @@ async def tab_explain(
         inference_start = perf_counter()
         
         data = pd.read_csv(data_path)
+        data.columns = ['data-VAL-' + col for col in data.columns]
 
         
-        sample_data_path = f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}/sample_data.csv"
+        sample_data_path = f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/{runName}/sample_data.csv"
         
         explainer = TabularExplainer(
             "shap", model, class_names=model.class_labels, num_samples=100, sample_data_path=sample_data_path

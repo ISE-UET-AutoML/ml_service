@@ -44,11 +44,11 @@ class BaseService():
         return {"status": "success", "message": "Model deploy successful"}
         
     
-    def check_already_deploy(self, params: DeployRequest) -> dict:
+    async def check_already_deploy(self, params: DeployRequest) -> dict:
         if hasattr(self, 'ort_sess'):
             return {"status": "success", "message": "Model already deployed"}
         else:
-            self.deploy(params)
+            await self.deploy(params)
             return {"status": "success", "message": "Model deployed successfully"}
         
     # FIX RELATIVE PATH ERROR

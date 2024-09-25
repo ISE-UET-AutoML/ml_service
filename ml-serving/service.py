@@ -55,7 +55,7 @@ class ImageClassifyService(BaseService):
         
         start_load = perf_counter()
         # FIX THIS
-        self.check_already_deploy(params)
+        await self.check_already_deploy(params)
         predictions = []
         
         try:
@@ -92,7 +92,7 @@ class ImageClassifyService(BaseService):
 
         start_load = perf_counter()
         # FIX THIS
-        self.check_already_deploy(params)
+        await self.check_already_deploy(params)
         os.makedirs("./tmp", exist_ok=True)
 
         try:
@@ -149,7 +149,7 @@ class TextClassifyService(BaseService):
         
         start_load = perf_counter()
         # FIX THIS
-        self.check_already_deploy(params)
+        await self.check_already_deploy(params)
         predictions = []
         try:
             data = preprocess_text(params.text_file_path, params.text_col)
@@ -185,7 +185,7 @@ class TextClassifyService(BaseService):
         
         start_load = perf_counter()
         # FIX THIS
-        self.check_already_deploy(params)
+        await self.check_already_deploy(params)
         print(self.model_metadata["class_names"])
         try:
             explainer = TextExplainer(params.method, self.ort_sess, class_names=self.model_metadata["class_names"])

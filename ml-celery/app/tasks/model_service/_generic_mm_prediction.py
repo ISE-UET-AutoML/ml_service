@@ -4,6 +4,7 @@ import joblib
 from settings.config import TEMP_DIR
 
 from utils.dataset_utils import (
+    download_dataset2,
     find_latest_model,
     split_data,
     create_csv,
@@ -32,45 +33,11 @@ def train(task_id: str, request: dict):
         user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
 
         # TODO: download dataset in this function
-        user_dataset_path = download_dataset(
-            user_dataset_path, True, request, request["dataset_download_method"]
+        train_df = download_dataset2(
+            user_dataset_path,
+            request["dataset_url"],
+            request["dataset_download_method"],
         )
-
-        # get data path
-        train_path = find_in_current_dir(
-            "train", user_dataset_path, is_pattern=True, extension=".csv"
-        )
-        # val_path = find_in_current_dir(
-        #     "val", user_dataset_path, is_pattern=True, extension=".csv"
-        # )
-        # if val_path == train_path:
-        #     val_path = None
-        # test_path = find_in_current_dir(
-        #     "test", user_dataset_path, is_pattern=True, extension=".csv"
-        # )
-        train_path = f"{user_dataset_path}{train_path}"
-        # if val_path is not None:
-        #     val_path = f"{user_dataset_path}/{val_path}"
-        # test_path = f"{user_dataset_path}/{test_path}"
-
-        # expanding image path
-        train_data = pd.read_csv(train_path)
-        # val_data = None
-        # if val_path is not None:
-        #     val_data = pd.read_csv(val_path)
-        # test_data = pd.read_csv(test_path)
-
-        for img_col in request["image_cols"]:
-            train_data[img_col] = train_data[img_col].apply(
-                lambda x: f"{user_dataset_path}/{x}"
-            )
-            # if val_path is not None:
-            #     val_data[img_col] = val_data[img_col].apply(
-            #         lambda x: f"{user_dataset_path}/{x}"
-            #     )
-            # test_data[img_col] = test_data[img_col].apply(
-            #     lambda x: f"{user_dataset_path}/{x}"
-            # )
 
         presets = request["presets"]
 
@@ -82,7 +49,7 @@ def train(task_id: str, request: dict):
         )
 
         predictor.fit(
-            train_data=train_data,
+            train_data=train_df,
             # tuning_data=val_data,
             time_limit=request["training_time"],
             presets=presets,

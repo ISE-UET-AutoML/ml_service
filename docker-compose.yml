@@ -3,23 +3,23 @@ services:
   # Redis
   redis:
     image: redis
-    container_name: tuananhtd_redis
+    container_name: khaihd_redis
     restart: unless-stopped
     command: redis-server --requirepass password
     volumes:
       - redis-data:/data
       - ./redis-logs:/logs/
     ports:
-      - 10001:6379
+      - 10201:6379
     networks:
-      - tuananhtd_mlnet
+      - khaihd_mlnet
 
   # Rabbitmq
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: tuananhtd_rabbitmq
+    container_name: khaihd_rabbitmq
     ports:
-      - 10002:5672
+      - 10202:5672
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
@@ -27,10 +27,10 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq/
       - rabbitmq-logs:/var/log/rabbitmq
     networks:
-      - tuananhtd_mlnet
+      - khaihd_mlnet
 
 networks:
-  tuananhtd_mlnet:
+  khaihd_mlnet:
 
 
 volumes:

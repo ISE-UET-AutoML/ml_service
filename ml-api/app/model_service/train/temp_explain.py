@@ -6,7 +6,7 @@ from typing import Optional, Union
 from urllib import response
 from zipfile import ZipFile
 from fastapi import APIRouter, File, Form, UploadFile, Body
-import pandas
+import pandas as pd
 from sympy import false, use
 from time import perf_counter
 from autogluon.multimodal import MultiModalPredictor
@@ -14,12 +14,12 @@ from autogluon.tabular import TabularPredictor
 from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from .explainers.ImageExplainer import ImageExplainer
 from .explainers.TextExplainer import TextExplainer
+from .explainers.TabularExplainer import TabularExplainer
 import joblib
 from settings.config import TEMP_DIR
 import shutil
 import numpy as np
 from time import time
-from .ExplainRequest import TextExplainRequest
 from pydantic import Field
 
 from utils.dataset_utils import (
@@ -192,6 +192,61 @@ async def text_explain(
         )
         try:
             explanations = explainer.explain(text)
+        except Exception as e:
+            print(e)
+
+        return {
+            "status": "success",
+            "message": "Explanation completed",
+            "load_time": load_time,
+            "inference_time": perf_counter() - inference_start,
+            "explanation": explanations,
+        }
+    except Exception as e:
+        print(e)
+    finally:
+        print(f"Eplapsed time: {time() - start_time}")
+        pass
+    
+
+
+# text explain
+@router.post(
+    "/tabular_classification/explain",
+    tags=["tabular_classification"],
+    description="Only use in dev and testing, not for production",
+)
+async def tab_explain(
+    userEmail: str = Form(...),
+    projectName: str = Form(...),
+    runName: str = Form(...),
+    data_path: str = Form(...),
+):
+
+    print(userEmail)
+    print(projectName)
+    print(data_path)
+
+    start_time = time()
+    try:
+        start_load = perf_counter()
+        # TODO : Load model with any path
+        model = await load_tabular_model(userEmail, projectName, runName)
+        
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+        
+        data = pd.read_csv(data_path)
+        data.columns = ['data-VAL-' + col for col in data.columns]
+
+        
+        sample_data_path = f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/{runName}/sample_data.csv"
+        
+        explainer = TabularExplainer(
+            "shap", model, class_names=model.class_labels, num_samples=100, sample_data_path=sample_data_path
+        )
+        try:
+            explanations = explainer.explain(data)
         except Exception as e:
             print(e)
 

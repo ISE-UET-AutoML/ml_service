@@ -186,3 +186,7 @@ testing/
 
 environment.yml
 autoML.code-workspace
+
+None/
+docker-compose.yml
+environment.ini

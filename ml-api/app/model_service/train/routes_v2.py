@@ -122,3 +122,38 @@ async def train_tabular_classification(request: SimpleTrainRequest):
         "task_id": str(task_id),
         "send_status": "SUCCESS",
     }
+
+
+@router.post("/v2/multimodal_classification", tags=["v2"])
+async def train_multimodal_classification(request: SimpleTrainRequest):
+    payload = {
+        "userEmail": request.userEmail,
+        "projectName": request.projectId,
+        "training_time": request.training_time,
+        "runName": request.runName,
+        "presets": request.presets,
+        "dataset_url": request.ds_projectId,
+        "dataset_download_method": "data_service",
+        "label_column": "label",
+        "training_argument": {
+            "ag_fit_args": {
+                "hyperparameters": {},
+            },
+        },
+        "problem_type": None,
+        "image_cols": [],
+        "metrics": ["accuracy", "f1", "precision", "recall"],
+    }
+
+    task_id = celery_client.send_task(
+        "model_service.generic_mm_prediction.train",
+        kwargs={
+            "request": payload,
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }

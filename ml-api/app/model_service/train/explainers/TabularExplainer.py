@@ -42,12 +42,13 @@ class TabularExplainer(BaseExplainer):
             feature_importances = instance[:, i]
             top_k_indices = np.argsort(feature_importances)[-k:][::-1]
             top_k_column_names = [self.feature_names[i] for i in top_k_indices if feature_importances[i] > 0]
-            
+            top_k_values = [round(feature_importances[i], 2) for i in top_k_indices if feature_importances[i] > 0]
             res.append({
                 "class": self.class_names[i],
-                "features": top_k_column_names
+                "features": top_k_column_names,
+                "values": top_k_values
             })
-        
+          
         return res
     
     def explain(self, instance):

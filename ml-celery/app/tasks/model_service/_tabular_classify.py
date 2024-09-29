@@ -67,16 +67,16 @@ def train(task_id: str, request: dict):
         # metrics = predictor.evaluate(test_data, metrics=request["metrics"])
         # print("Training model successfully")
 
-        metadata = {
-            "labels": predictor.class_labels.tolist(),
-        }
-        with open(f"{user_model_path}/metadata_label.json", "w") as f:
-            json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
+        # metadata = {
+        #     "labels": predictor.class_labels.tolist(),
+        # }
+        # with open(f"{user_model_path}/metadata_label.json", "w") as f:
+        #     json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
         
         # save sample data for data distribution
-        train_df.drop(columns=[label]).sample(n=100).to_csv(f"{user_model_path}/sample_data.csv", index=False)
+        train_df.drop(columns=['label']).sample(n=100).to_csv(f"{user_model_path}/sample_data.csv", index=False)
         end = perf_counter()
-
+        print('Train Successfuly')
         return {
             "metrics": "temp_metrics",
             "training_evaluation_time": end - start,

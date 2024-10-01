@@ -7,6 +7,8 @@ import requests
 from time import time
 import pandas as pd
 from transformers import ElectraTokenizer
+from autogluon.tabular import TabularPredictor
+from autogluon.multimodal import MultiModalPredictor
 import json
 from urllib.parse import urlparse
 
@@ -69,6 +71,10 @@ def preprocess_text(text_input, text_col=None):
     return token_ids, segment_ids, valid_length
     
 
+def preprocess_tabular(data, excluded_columns=None):
+    data.columns = ['data-VAL-' + col for col in data.columns]
+    return data
+
 def combine_extra_request_fields(params):
     required_fields = params.dict()
     extra_fields = params.__dict__.get("model_extra", {})
@@ -79,3 +85,11 @@ def combine_extra_request_fields(params):
 def get_image_filename(url):
     parsed_url = urlparse(url)
     return os.path.basename(parsed_url.path)
+
+def load_tabular_model(userEmail, projectName, runName):
+    model = TabularPredictor.load(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}')
+    return model
+
+def load_multimodal_model(userEmail, projectName, runName):
+    model = MultiModalPredictor.load(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}')
+    return model

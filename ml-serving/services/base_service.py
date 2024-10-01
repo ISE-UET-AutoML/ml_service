@@ -3,7 +3,8 @@ import typing as t
 import abc
 import json
 from utils.requests import DeployRequest
-
+from utils.preprocess_data import load_tabular_model, load_multimodal_model
+from utils.tasks import SPECIAL_TASKS
 
 class BaseService():
     __metaclass__ = abc.ABCMeta
@@ -34,8 +35,11 @@ class BaseService():
         runName = params.runName
         task = params.task
         try:
-            self.load_model_and_model_info(userEmail, projectName, runName)
-            self.load_model_metadata(userEmail, projectName, runName)
+            if task not in SPECIAL_TASKS:
+                self.load_model_and_model_info(userEmail, projectName, runName)
+                self.load_model_metadata(userEmail, projectName, runName)
+            else:
+                self.load_special_models(userEmail, projectName, runName, task)
             self.warmup(task)
         except Exception as e:
             print(e)
@@ -63,6 +67,23 @@ class BaseService():
             return None
         except Exception as e:
             print(e)
+    
+    # TIMESERIES AND TABULAR MODELS
+    def load_special_models(self, userEmail: str, projectName: str, runName: str, task: str) -> None:
+        
+        try:
+            match(task):
+                case "TABULAR_CLASSIFICATION":
+                    self.ort_sess = load_tabular_model(userEmail, projectName, runName)
+                    self.input_names = None
+                case "MULTIMODAL_CLASSIFICATION":
+                    self.ort_sess = load_multimodal_model(userEmail, projectName, runName)
+                    self.input_names = None
+                                        
+            print("Model deploy successfully")
+            return None
+        except Exception as e:
+            print(e)
 
     # fake data and create requests to warmup the model
     def warmup(self, task):
@@ -72,18 +93,18 @@ class BaseService():
 
 
     @abc.abstractmethod
-    def predict_proba(self, data):
+    async def predict_proba(self, data):
         """method to be implemented by subclasses"""
         return
 
 
     @abc.abstractmethod
-    def predict(self):
+    async def predict(self):
         """predict method to be implemented by subclasses"""
         return
 
     @abc.abstractmethod
-    def explain(self):
+    async def explain(self):
         """explain method to be implemented by subclasses"""
         return
 

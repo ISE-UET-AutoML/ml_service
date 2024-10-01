@@ -38,3 +38,12 @@ class TextExplainRequest(BaseRequest):
     text: str = Field(description="text to explained")
     method: str = Field(description="Method to explain the text", default="lime")
     task: str = Field(description="task to be performed", default="TEXT_CLASSIFICATION")
+
+
+# TABULAR CLASSIFICATION
+class TabularPredictionRequest(BaseRequest):
+    tab_file_path: str = Field(description="Tabular file path", default="text.csv")
+
+class TabularExplainRequest(BaseRequest):
+    tab_explain_file_path: str = Field(description="text to explained")
+    method: str = Field(description="Method to explain the text", default="lime")

@@ -409,8 +409,8 @@ class MultiModalClassifyService(BaseService):
 )
 class InferenceService:
 
-    # img_classify_service = bentoml.depends(ImageClassifyService)
-    # text_classify_service = bentoml.depends(TextClassifyService)
+    img_classify_service = bentoml.depends(ImageClassifyService)
+    text_classify_service = bentoml.depends(TextClassifyService)
     tabular_classify_service = bentoml.depends(TabularClassifyService)
     multimodal_classify_service = bentoml.depends(MultiModalClassifyService)
     def __init__(self):

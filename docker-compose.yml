@@ -2,23 +2,23 @@ services:
   # Redis
   redis:
     image: redis
-    container_name: redis
+    container_name: minhvv_redis
     restart: unless-stopped
     command: redis-server --requirepass password
     volumes:
       - redis-data:/data
       - ./redis-logs:/logs/
     ports:
-      - 8671:6379
+      - 10411:6379
     networks:
-      - mlnet
+      - minhvv_automl
 
   # Rabbitmq
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: "rabbitmq"
+    container_name: minhvv_rabbitmq
     ports:
-      - 8672:5672
+      - 10412:5672
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
@@ -26,14 +26,14 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq/
       - rabbitmq-logs:/var/log/rabbitmq
     networks:
-      - mlnet
+      - minhvv_automl
   #
   # # Label Studio
   # label-studio:
   #   image: heartexlabs/label-studio:latest
   #   container_name: label_studio
   #   ports:
-  #     - 8673:8080
+  #     - 10413:8080
   #   volumes:
   #     - ./mydata:/label-studio/data
   #     # for some stupid reason, label studio is only able to run with mydata folder
@@ -62,7 +62,7 @@ services:
   #         - ./ml-api/app:/ml-api/app/
   #         - ./api-logs:/logs/
   #     ports:
-  #         - 8670:8670
+  #         - 10410:10410
   #     depends_on:
   #         - rabbitmq
   #         - redis
@@ -87,7 +87,7 @@ services:
   #         - mlnet
 
 networks:
-  mlnet:
+  minhvv_automl:
 
 
 volumes:

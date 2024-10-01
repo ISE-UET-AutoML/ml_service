@@ -16,7 +16,6 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(debug=True)
 
-
 origins = ["*"]
 
 app.add_middleware(

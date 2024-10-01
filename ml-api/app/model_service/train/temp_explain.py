@@ -75,7 +75,7 @@ async def load_timeseries_model(
     user_name: str, project_name: str, run_name: str
 ) -> TimeSeriesPredictor:
     model_path = find_latest_tabular_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/ISE/{run_name}"
     )
     print("model path: ", model_path)
     return load_timeseries_model_from_path(model_path)
@@ -85,7 +85,7 @@ async def load_tabular_model(
     user_name: str, project_name: str, run_name: str
 ) -> TabularPredictor:
     model_path = find_latest_tabular_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/ISE/{run_name}"
     )
     print("model path: ", model_path)
     return load_tabular_model_from_path(model_path)
@@ -240,13 +240,14 @@ async def tab_explain(
         data.columns = ['data-VAL-' + col for col in data.columns]
 
         
-        sample_data_path = f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/{runName}/sample_data.csv"
+        sample_data_path = f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/ISE/{runName}/sample_data.csv"
         
         explainer = TabularExplainer(
             "shap", model, class_names=model.class_labels, num_samples=100, sample_data_path=sample_data_path
         )
         try:
             explanations = explainer.explain(data)
+            
         except Exception as e:
             print(e)
 

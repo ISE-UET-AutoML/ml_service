@@ -108,6 +108,20 @@ class AutogluonTrainer(object):
 
             # acc=history.get('validation_performance')
             # loss=history.get('validation_loss')
+            
+
+            print(predictor.eval_metric)
+            
+            metadata = {
+                "labels": predictor.class_labels.tolist(),
+            }
+            with open(f"{model_path}/metadata.json", "w") as f:
+                json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
+            
+            # save sample data for data distribution
+            train_df.drop(columns=[label]).sample(n=100).to_csv(f"{model_path}/sample_data.csv", index=False)
+            
+            
             self._logger.info(f"Training completed. Model saved to {model_path}")
             return predictor
         except ValueError as ve:

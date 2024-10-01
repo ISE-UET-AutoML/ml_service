@@ -1,8 +1,9 @@
 services:
+  # change "user" . for Ex: tuananhtd
   # Redis
   redis:
     image: redis
-    container_name: redis
+    container_name: user_redis
     restart: unless-stopped
     command: redis-server --requirepass password
     volumes:
@@ -11,12 +12,12 @@ services:
     ports:
       - 10411:6379
     networks:
-      - mlnet
+      - user_mlnet
 
   # Rabbitmq
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: "rabbitmq"
+    container_name: user_rabbitmq
     ports:
       - 10412:5672
     environment:
@@ -88,7 +89,7 @@ services:
   #         - mlnet
 
 networks:
-  mlnet:
+  user_mlnet:
 
 
 volumes:

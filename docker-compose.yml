@@ -1,4 +1,5 @@
 services:
+  # change "user" . for Ex: tuananhtd
   # Redis
   redis:
     image: redis

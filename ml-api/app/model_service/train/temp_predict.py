@@ -74,7 +74,7 @@ async def load_timeseries_model(
     user_name: str, project_name: str, run_name: str
 ) -> TimeSeriesPredictor:
     model_path = find_latest_tabular_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/ISE/{run_name}"
     )
     print("model path: ", model_path)
     return load_timeseries_model_from_path(model_path)
@@ -84,7 +84,7 @@ async def load_tabular_model(
     user_name: str, project_name: str, run_name: str
 ) -> TabularPredictor:
     model_path = find_latest_tabular_model(
-        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/{run_name}"
+        f"{TEMP_DIR}/{user_name}/{project_name}/trained_models/ISE/{run_name}"
     )
     print("model path: ", model_path)
     return load_tabular_model_from_path(model_path)
@@ -156,15 +156,19 @@ async def img_class_predict(
     description="Only use in dev and testing, not for production",
 )
 async def tab_predict(
-    userEmail: str = Form("test-automl"),
-    projectName: str = Form("titanic"),
-    runName: str = Form("ISE"),
-    csv_file: UploadFile = File(...),
+    userEmail: str = Form(...),
+    projectName: str = Form(...),
+    runName: str = Form(...),
+    data_path: str = Form(...),
 ):
     print(userEmail)
     print(runName)
+    print(data_path)
+    
+    
     try:
-        df = pandas.read_csv(csv_file.file)
+        df = pandas.read_csv(data_path)
+        df.columns = ['data-VAL-' + col for col in df.columns]
         start_load = perf_counter()
         # TODO : Load model with any path
 
@@ -172,30 +176,31 @@ async def tab_predict(
         model = await load_tabular_model(userEmail, projectName, runName)
         print("Model loaded")
 
-        print(df.head())
         load_time = perf_counter() - start_load
         inference_start = perf_counter()
-        predictions = model.predict(df, as_pandas=True)
+        predictions = []
         try:
-            proba: pandas.DataFrame = model.predict_proba(
-                df, as_pandas=True, as_multiclass=True
+            probas = model.predict_proba(
+                df, as_pandas=False, as_multiclass=True
             )
+            
+            for proba in probas:
+                print(proba)
+                predictions.append(
+                    {
+                        "key": str(uuid.uuid4()),
+                        "class": model.class_labels[np.argmax(proba)],
+                        "confidence": round(float(max(proba)), 2),
+                    }
+                )
         except Exception as e:
-            return {
-                "status": "success",
-                "message": "Prediction completed",
-                "load_time": load_time,
-                "proba": "Not a classification problem",
-                "inference_time": perf_counter() - inference_start,
-                "predictions": predictions.to_csv(),
-            }
+            print(e)
         return {
             "status": "success",
             "message": "Prediction completed",
             "load_time": load_time,
-            "proba": proba.to_csv(),
             "inference_time": perf_counter() - inference_start,
-            "predictions": predictions.to_csv(),
+            "predictions": predictions,
         }
     except Exception as e:
         print(e)

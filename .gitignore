@@ -185,3 +185,7 @@ docker-compose.yml
 testing/
 
 environment.yml
+
+None/
+docker-compose.yml
+environment.ini

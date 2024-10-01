@@ -75,6 +75,10 @@ def preprocess_tabular(data, excluded_columns=None):
     data.columns = ['data-VAL-' + col for col in data.columns]
     return data
 
+def preprocess_multimodal(data, excluded_columns=None):
+    data.columns = ['data-VAL-' + col for col in data.columns]
+    return data
+
 def combine_extra_request_fields(params):
     required_fields = params.dict()
     extra_fields = params.__dict__.get("model_extra", {})

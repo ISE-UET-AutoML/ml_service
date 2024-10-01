@@ -7,7 +7,7 @@ from PIL import Image as PILImage
 import typing as t
 import bentoml
 from utils.requests import DeployRequest, ImagePredictionRequest, ImageExplainRequest, TextPredictionRequest, TextExplainRequest, BaseRequest, TabularExplainRequest, TabularPredictionRequest
-from utils.preprocess_data import preprocess_image, softmax, preprocess_text, combine_extra_request_fields, preprocess_tabular
+from utils.preprocess_data import preprocess_image, softmax, preprocess_text, combine_extra_request_fields, preprocess_tabular, preprocess_multimodal
 from time import time
 import onnx
 import onnxruntime as ort
@@ -240,7 +240,7 @@ class TabularClassifyService(BaseService):
         predictions = []
         try:
             data = pd.read_csv(params.tab_file_path)
-            # data = preprocess_tabular(data)
+            data = preprocess_tabular(data)
             load_time = perf_counter() - start_load
             
             inference_start = perf_counter()
@@ -329,7 +329,7 @@ class MultiModalClassifyService(BaseService):
         predictions = []
         try:
             data = pd.read_csv(params.tab_file_path)
-            # data = preprocess_multimodal(data)
+            data = preprocess_multimodal(data)
             load_time = perf_counter() - start_load
             
             inference_start = perf_counter()
@@ -364,7 +364,7 @@ class MultiModalClassifyService(BaseService):
         await self.check_already_deploy(params)
         
         data = pd.read_csv(params.tab_explain_file_path)
-        # data = preprocess_multimodal(data)
+        data = preprocess_multimodal(data)
         
         try:
             explainer = MultiModalExplainer(params.method, self.ort_sess, class_names=self.ort_sess.class_labels, num_samples=100, sample_data_path=sample_data_path)

@@ -1,5 +1,5 @@
 ## How to run
 
-- `pip install bentoml onnx onxxruntime`
-- `bentoml serve service:InferenceService --reload`
+- `pip install -r requirements.txt`
+- `source start.sh`
 

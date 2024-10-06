@@ -47,3 +47,15 @@ class TabularPredictionRequest(BaseRequest):
 class TabularExplainRequest(BaseRequest):
     tab_explain_file_path: str = Field(description="text to explained")
     method: str = Field(description="Method to explain the text", default="lime")
+    
+
+class MultiModalPredictionRequest(BaseRequest):
+    tab_file_path: str = Field(description="csv file path", default="text.csv")
+    column_types: dict = Field(description="column types", default=None)
+    
+    
+
+class MultiModalExplainRequest(BaseRequest):
+    tab_explain_file_path: str = Field(description="text to explained")
+    method: str = Field(description="Method to explain the text", default="lime")
+    column_types: dict = Field(description="column types", default=None)

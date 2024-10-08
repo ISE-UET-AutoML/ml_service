@@ -330,7 +330,7 @@ class MultiModalClassifyService(BaseService):
         predictions = []
         try:
             data = pd.read_csv(params.tab_file_path)
-            data = preprocess_multimodal(data, params.column_types)
+            data, _ = preprocess_multimodal(data, params.column_types)
             load_time = perf_counter() - start_load
             
             inference_start = perf_counter()
@@ -364,10 +364,10 @@ class MultiModalClassifyService(BaseService):
         await self.check_already_deploy(params)
         
         data = pd.read_csv(params.tab_explain_file_path)
-        data = preprocess_multimodal(data)
+        data, feature_names = preprocess_multimodal(data)
         
         try:
-            explainer = MultiModalExplainer(params.method, self.ort_sess, class_names=self.ort_sess.class_labels, num_samples=100)
+            explainer = MultiModalExplainer(params.method, self.ort_sess, class_names=self.ort_sess.class_labels, num_samples=100, feature_names=feature_names)
             load_time = perf_counter() - start_load
             inference_start = perf_counter()
             

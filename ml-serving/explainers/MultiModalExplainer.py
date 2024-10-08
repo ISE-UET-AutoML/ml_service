@@ -16,15 +16,16 @@ def custom_masker(mask, x):
 
 
 class MultiModalExplainer(BaseExplainer):
-    def __init__(self, method="shap", model=None, class_names=None, num_samples=100):
+    def __init__(self, method="shap", model=None, class_names=None, num_samples=100, feature_names=None):
         super().__init__(model)
         self.method = method
         self.class_names = class_names
         self.num_samples = num_samples
-        self.feature_names = model.feature_names
+        self.feature_names = feature_names
         
         if method == "shap":
-            self.explainer = shap.KernelExplainer(self.predict_proba, custom_masker)
+            # suboptimal code, but it works
+            self.explainer = shap.Explainer(self.predict_proba, custom_masker, feature_names=self.feature_names)
 
     def preprocess(self, instance):
         if isinstance(instance, pd.Series):
@@ -44,20 +45,23 @@ class MultiModalExplainer(BaseExplainer):
         res = []
         
         for i in range(len(self.class_names)):
-            feature_importances = instance[:, i]
-            top_k_indices = np.argsort(feature_importances)[-k:][::-1].values
+            feature_importances = instance[:, i].values
+            top_k_indices = np.argsort(feature_importances)[-k:][::-1]
             top_k_column_names = [self.feature_names[i] for i in top_k_indices if feature_importances[i] > 0]
+            top_k_values = [round(float(feature_importances[i]), 2) for i in top_k_indices if feature_importances[i] > 0]
             
             res.append({
-                "class": self.class_names[i],
-                "features": top_k_column_names
+                "class": str(self.class_names[i]),
+                "features": top_k_column_names,
+                "values": top_k_values
             })
         
         return res
     
     def explain(self, instance):
         if self.method == "shap":
-            shap_values = self.explainer.shap_values(instance, nsamples=self.num_samples)
+            shap_values = self.explainer(instance)
+            print(shap_values)
             # need to adapt to multiple examples at once
             return self.postprocess(shap_values[0])
         

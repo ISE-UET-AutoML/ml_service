@@ -364,7 +364,8 @@ class MultiModalClassifyService(BaseService):
         await self.check_already_deploy(params)
         
         data = pd.read_csv(params.tab_explain_file_path)
-        data, feature_names = preprocess_multimodal(data)
+        data, feature_names = preprocess_multimodal(data, params.column_types)
+        
         
         try:
             explainer = MultiModalExplainer(params.method, self.ort_sess, class_names=self.ort_sess.class_labels, num_samples=100, feature_names=feature_names)

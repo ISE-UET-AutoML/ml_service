@@ -67,7 +67,7 @@ class ImageExplainer(BaseExplainer):
         if self.method == "lime":
             try:
                 explanation = self.explainer.explain_instance(image_input, self.predict_proba, hide_color=0, num_samples=self.num_samples, batch_size=self.batch_size)
-                temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=10, hide_rest=False)
+                temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=False)
 
                 # Display the explanation
                 image_explanation = mark_boundaries(temp, mask, mode="thick")

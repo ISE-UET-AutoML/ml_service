@@ -59,10 +59,10 @@ def train(task_id: str, request: dict):
             ],
         )
 
-        try:
-            exported_path = predictor.export_onnx(data=train_df[0:1], path=user_model_path, truncate_long_and_double=True)
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        # try:
+        #     exported_path = predictor.export_onnx(data=train_df[0:1], path=user_model_path, truncate_long_and_double=True)
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")
 
         
 

@@ -44,6 +44,7 @@ import os
 @bentoml.service(
     resources={
         "cpu": "1",
+        # "gpu": 1,
     },
     traffic={"timeout": 500},
 )
@@ -451,7 +452,7 @@ class MultiModalClassifyService(BaseService):
 )
 class InferenceService:
 
-    # img_classify_service = bentoml.depends(ImageClassifyService)
+    img_classify_service = bentoml.depends(ImageClassifyService)
     # text_classify_service = bentoml.depends(TextClassifyService)
     # tabular_classify_service = bentoml.depends(TabularClassifyService)
     multimodal_classify_service = bentoml.depends(MultiModalClassifyService)

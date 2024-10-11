@@ -20,13 +20,14 @@ from .TrainRequest import (
 )
 from settings.config import TEMP_DIR
 import os
+from autogluon.tabular import TabularPredictor
 
 router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
 router.include_router(celery_predict_router, prefix="")
 router.include_router(temp_explain_router, prefix="")
 
-from .temp_predict import load_model, load_model_from_path, find_latest_model
+from .temp_predict import load_model, load_model_from_path, find_latest_model, find_latest_tabular_model
 
 
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
@@ -68,6 +69,26 @@ async def get_fit_history(
         scalars_data[scalar] = csv
     return {"fit_history": {"scalars": scalars_data}}
 
+@router.get(
+    "/tabular_model_ranking",
+    description=("Get ranking of tabular models"),
+)
+async def get_tabular_model_ranking(
+    userEmail: str = "test-automl",
+    projectName: str = "petfinder",
+    runName: str = "ISE",
+    task_id: str = "lastest",
+):
+    if task_id == "lastest":
+        model_path = find_latest_tabular_model(f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/{runName}").removesuffix("/predictor.pkl")
+    else:
+        model_path = f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/{runName}/{task_id}"
+    predictor=TabularPredictor.load(model_path)
+
+    return {
+        "fit_summary": predictor.fit_summary(),
+        "model_ranking": predictor.leaderboard()
+        }
 
 @router.post(
     "/tabular_classification",

@@ -16,6 +16,7 @@ from utils.train_utils import find_in_current_dir
 import os
 from pathlib import Path
 import pandas as pd
+import json
 
 
 def train(task_id: str, request: dict):
@@ -62,6 +63,19 @@ def train(task_id: str, request: dict):
 
         # metrics = predictor.evaluate(test_data, metrics=request["metrics"])
         # print("Training model successfully")
+        exported_path = predictor.export_onnx(data=train_df[0:1], path=str(user_model_path), batch_size=4, truncate_long_and_double=True)
+
+
+        metadata = {
+            "labels": predictor.class_labels.tolist(),
+        }
+
+        with open(f"{user_model_path}/metadata.json", "w") as f:
+            json.dump(metadata, f, sort_keys=True, indent=4, ensure_ascii=False)
+
+        print(f"Metadata saved")
+        
+        print(f"Training completed. Model save to {exported_path}")
 
         end = perf_counter()
 
@@ -70,6 +84,8 @@ def train(task_id: str, request: dict):
             "training_evaluation_time": end - start,
             "saved_model_path": user_model_path,
         }
+        print("Training model successfully")
+
 
     except Exception as e:
         print(e)

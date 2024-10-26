@@ -25,8 +25,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory=os.path.join(os.getcwd(), "tmp")), name="static")
-
+app.mount(
+    "/static", StaticFiles(directory=os.path.join(os.getcwd(), "tmp")), name="static"
+)
 
 
 @app.get("/")

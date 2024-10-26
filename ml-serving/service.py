@@ -6,31 +6,15 @@ from typing import List
 from PIL import Image as PILImage
 import typing as t
 import bentoml
-from utils.requests import (
-    DeployRequest,
-    ImagePredictionRequest,
-    ImageExplainRequest,
-    TextPredictionRequest,
-    TextExplainRequest,
-    BaseRequest,
-    TabularExplainRequest,
-    TabularPredictionRequest,
-)
-from utils.preprocess_data import (
-    preprocess_image,
-    softmax,
-    preprocess_text,
-    combine_extra_request_fields,
-    preprocess_tabular,
-    preprocess_multimodal,
-    temp_preprocess_fake_model,
-)
+from utils.requests import DeployRequest, ImagePredictionRequest, ImageExplainRequest, TextPredictionRequest, TextExplainRequest, BaseRequest, TabularExplainRequest, TabularPredictionRequest, MultiModalPredictionRequest
+from utils.preprocess_data import preprocess_image, softmax, preprocess_text, combine_extra_request_fields, preprocess_tabular, preprocess_multimodal
 from time import time
 import onnx
 import onnxruntime as ort
 from explainers.ImageExplainer import ImageExplainer
 from explainers.TextExplainer import TextExplainer
 from explainers.TabularExplainer import TabularExplainer
+from explainers.MultiModalExplainer import MultiModalExplainer
 from settings import FRONTEND_URL, BACKEND_URL, ML_SERVICE_URL, INFERENCE_SERVICE_PORT
 from services.base_service import BaseService
 import uuid
@@ -357,6 +341,8 @@ class MultiModalClassifyService(BaseService):
     @bentoml.api()
     async def predict(self, params: TabularPredictionRequest) -> dict:
 
+    async def predict(self, params: MultiModalPredictionRequest) -> dict:
+        
         start_load = perf_counter()
         # FIX THIS
         await self.check_already_deploy(params)
@@ -369,6 +355,8 @@ class MultiModalClassifyService(BaseService):
             else:
                 data = temp_preprocess_fake_model(data)
 
+            data = pd.read_csv(params.tab_file_path)
+            data, _ = preprocess_multimodal(data, params.column_types)
             load_time = perf_counter() - start_load
 
             inference_start = perf_counter()
@@ -396,23 +384,17 @@ class MultiModalClassifyService(BaseService):
 
     @bentoml.api()
     async def explain(self, params: TabularExplainRequest) -> dict:
-
-        return {"status": "Not implemented yet"}
+        
         start_load = perf_counter()
         # FIX THIS
         await self.check_already_deploy(params)
 
         data = pd.read_csv(params.tab_explain_file_path)
-        data = preprocess_multimodal(data)
-
+        data, feature_names = preprocess_multimodal(data, params.column_types)
+        
+        
         try:
-            explainer = MultiModalExplainer(
-                params.method,
-                self.ort_sess,
-                class_names=self.ort_sess.class_labels,
-                num_samples=100,
-                sample_data_path=sample_data_path,
-            )
+            explainer = MultiModalExplainer(params.method, self.ort_sess, class_names=self.ort_sess.class_labels, num_samples=100, feature_names=feature_names)
             load_time = perf_counter() - start_load
             inference_start = perf_counter()
 
@@ -452,9 +434,9 @@ class MultiModalClassifyService(BaseService):
 )
 class InferenceService:
 
-    img_classify_service = bentoml.depends(ImageClassifyService)
-    text_classify_service = bentoml.depends(TextClassifyService)
-    tabular_classify_service = bentoml.depends(TabularClassifyService)
+    # img_classify_service = bentoml.depends(ImageClassifyService)
+    # text_classify_service = bentoml.depends(TextClassifyService)
+    # tabular_classify_service = bentoml.depends(TabularClassifyService)
     multimodal_classify_service = bentoml.depends(MultiModalClassifyService)
 
     def __init__(self):

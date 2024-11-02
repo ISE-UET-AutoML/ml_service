@@ -2,9 +2,9 @@ import onnxruntime as ort
 import typing as t
 import abc
 import json
-from utils.requests import DeployRequest
-from utils.preprocess_data import load_tabular_model, load_multimodal_model
-from utils.tasks import SPECIAL_TASKS
+from utils import DeployRequest
+
+SPECIAL_TASKS = ["TABULAR_CLASSIFICATION", "MULTIMODAL_CLASSIFICATION"]
 
 class BaseService():
     __metaclass__ = abc.ABCMeta
@@ -22,18 +22,18 @@ class BaseService():
         pass
 
     def load_model_metadata(self, userEmail: str, projectName: str, runName: str):
-        with open(f"../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/metadata.json", "r") as f:
+        with open(f"./model/metadata.json", "r") as f:
             labels = json.load(f)['labels']
         self.model_metadata = {"class_names": labels}
         return None
 
 
-    def deploy(self, params: DeployRequest) -> dict:
+    def deploy(self, params) -> dict:
         print(params)
-        userEmail = params.userEmail
-        projectName = params.projectName
-        runName = params.runName
-        task = params.task
+        userEmail = params["userEmail"]
+        projectName = params["projectName"]
+        runName = params["runName"]
+        task = params["task"]
         try:
             if task not in SPECIAL_TASKS:
                 self.load_model_and_model_info(userEmail, projectName, runName)
@@ -48,11 +48,12 @@ class BaseService():
         return {"status": "success", "message": "Model deploy successful"}
         
     
-    async def check_already_deploy(self, params: DeployRequest) -> dict:
+    async def check_already_deploy(self, params) -> dict:
+        print(params)
         if hasattr(self, 'ort_sess'):
             return {"status": "success", "message": "Model already deployed"}
         else:
-            await self.deploy(params)
+            self.deploy(params)
             return {"status": "success", "message": "Model deployed successfully"}
         
     # FIX RELATIVE PATH ERROR
@@ -60,7 +61,7 @@ class BaseService():
     
         
         try:
-            self.ort_sess = ort.InferenceSession(f'../tmp/{userEmail}/{projectName}/trained_models/ISE/{runName}/model.onnx', 
+            self.ort_sess = ort.InferenceSession(f'./model/model.onnx', 
                                                  providers=['AzureExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'])
             self.input_names = [in_param.name for in_param in self.ort_sess.get_inputs()]
             print("Model deploy successfully")
@@ -70,7 +71,8 @@ class BaseService():
     
     # TIMESERIES AND TABULAR MODELS
     def load_special_models(self, userEmail: str, projectName: str, runName: str, task: str) -> None:
-        
+        pass
+    
         try:
             match(task):
                 case "TABULAR_CLASSIFICATION":
@@ -107,6 +109,5 @@ class BaseService():
     async def explain(self):
         """explain method to be implemented by subclasses"""
         return
-
 
 

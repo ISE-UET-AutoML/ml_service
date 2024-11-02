@@ -205,6 +205,62 @@ async def tab_predict(
     except Exception as e:
         print(e)
 
+@router.post(
+    "/multimodal_classification/temp_predict",
+    tags=["multimodal_classification"],
+    description="Only use in dev and testing, not for production",
+)
+async def multimodal_predict(
+    userEmail: str = Form(...),
+    projectName: str = Form(...),
+    runName: str = Form(...),
+    data_path: str = Form(...),
+):
+    print(userEmail)
+    print(runName)
+    print(data_path)
+    
+    return {"status": "success"}
+
+    try:
+        df = pandas.read_csv(data_path)
+        df.columns = ['data-VAL-' + col for col in df.columns]
+        start_load = perf_counter()
+        # TODO : Load model with any path
+
+        print("Loading model")
+        model = await load_model(userEmail, projectName, runName)
+        print("Model loaded")
+
+        load_time = perf_counter() - start_load
+        inference_start = perf_counter()
+        predictions = []
+        try:
+            probas = model.predict_proba(
+                df, as_pandas=False, as_multiclass=True
+            )
+            
+            for proba in probas:
+                print(proba)
+                predictions.append(
+                    {
+                        "key": str(uuid.uuid4()),
+                        "class": model.class_labels[np.argmax(proba)],
+                        "confidence": round(float(max(proba)), 2),
+                    }
+                )
+        except Exception as e:
+            print(e)
+        return {
+            "status": "success",
+            "message": "Prediction completed",
+            "load_time": load_time,
+            "inference_time": perf_counter() - inference_start,
+            "predictions": predictions,
+        }
+    except Exception as e:
+        print(e)
+
 
 @router.post(
     "/object_detection/temp_predict",

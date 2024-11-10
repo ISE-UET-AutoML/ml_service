@@ -188,5 +188,6 @@ environment.yml
 
 None/
 docker-compose.yml
-environment.ini
-environment.ini
+./environment.ini
+
+./instance_ssh_keys

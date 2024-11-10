@@ -28,10 +28,10 @@ def generate_ssh_key_pair(task_id):
     # Generate public key
     public_key = private_key.public_key()
 
-    # Serialize the public key
-    public_key_pem = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    # Serialize the public key in OpenSSH format
+    public_key_openssh = public_key.public_bytes(
+        encoding=serialization.Encoding.OpenSSH,
+        format=serialization.PublicFormat.OpenSSH
     )
 
     # Save the keys to files named with the task_id
@@ -42,7 +42,7 @@ def generate_ssh_key_pair(task_id):
         f.write(private_key_pem)
 
     with open(public_key_filename, "wb") as f:
-        f.write(public_key_pem)
+        f.write(public_key_openssh)
 
     with open(public_key_filename, "rb") as f:
         public_key_string = f.read().decode("utf-8")
@@ -60,6 +60,6 @@ def attach_ssh_key_to_instance(task_id, instance_id):
     with open(public_key_filename, "rb") as f:
         public_key_string = f.read().decode("utf-8")
 
-    response = vast_sdk.attach_ssh(instance_id, public_key_string)
+    response = vast_sdk.attach_ssh(instance_id=instance_id, ssh_key=public_key_string)
     
     return response

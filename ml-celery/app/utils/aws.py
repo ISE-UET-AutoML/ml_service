@@ -8,6 +8,10 @@ from settings.config import BUCKET_NAME, BUCKET_REGION, AWS_ACCESS_KEY_ID, AWS_S
 def get_training_script_url(task):
     return create_presigned_url(f"scripts/{task.lower()}_train.zip")
 
+
+def get_inference_script_url(task, deploy_type):
+    return create_presigned_url(f"scripts/{task.lower()}_infer.zip")
+
 def create_presigned_url(object_name, bucket_name=BUCKET_NAME, expiration=36000):
     """Generate a presigned URL to share an S3 object
 
@@ -30,7 +34,6 @@ def create_presigned_url(object_name, bucket_name=BUCKET_NAME, expiration=36000)
                                                     Params={'Bucket': bucket_name,
                                                             'Key': object_name},
                                                     ExpiresIn=expiration)
-        response
 
     except ClientError as e:
         logging.error(e)

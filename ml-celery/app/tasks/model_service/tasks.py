@@ -13,6 +13,7 @@ from . import _text_text_semantic_matching
 from . import _img_img_semantic_matching
 from . import _time_series
 from . import _text_prediction
+from . import _generic_cloud_training
 from settings.config import BACKEND_HOST
 
 
@@ -23,7 +24,6 @@ from settings.config import BACKEND_HOST
 def time_test(self, request: dict):
     time.sleep(10)
     return "time_test"
-
 
 @shared_task(
     bind=True,
@@ -40,7 +40,7 @@ def image_classify_train(self, request: dict):
     name="model_service.text_prediction.train",
     base=BaseTrainTask,
 )
-def image_classify_train(self, request: dict):
+def text_prediction_train(self, request: dict):
     result = _text_prediction.train(self.request.id, request)
     return result
 
@@ -120,3 +120,13 @@ import asyncio
 )
 def generic_multimodal_temp_predict(self, request: dict):
     return asyncio.run(_generic_mm_prediction.predict(self.request.id, request))
+
+
+@shared_task(
+    bind=True,
+    name="model_service.generic_cloud_training.train",
+    base=BaseTrainTask,
+)
+def generic_cloud_train(self, request: dict):
+    result = _generic_cloud_training.train(self.request.id, request)
+    return result

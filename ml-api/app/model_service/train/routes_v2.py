@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .TrainRequest import SimpleTrainRequest
+from .TrainRequest import SimpleTrainRequest, CloudTrainRequest
 from settings.config import BACKEND_HOST, celery_client
 
 router = APIRouter()
@@ -147,6 +147,54 @@ async def train_multimodal_classification(request: SimpleTrainRequest):
 
     task_id = celery_client.send_task(
         "model_service.generic_mm_prediction.train",
+        kwargs={
+            "request": payload,
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+@router.post("/v2/generic_cloud_training", tags=["v2"])
+async def train_generic_cloud(request: CloudTrainRequest):
+    payload = {
+        "userEmail": request.userEmail,
+        "task": request.task,
+        "projectName": request.projectId,
+        "training_time": request.training_time,
+        "runName": request.runName,
+        "presets": request.presets,
+        "dataset_url": request.dataset_url,
+        "dataset_label_url": request.dataset_label_url,
+        "dataset_download_method": "data_service",
+        "training_argument": {
+            "data_args": {},
+            "ag_model_args": {
+                "pretrained": True,
+                "hyperparameters": {
+                    "model.timm_image.checkpoint_name": "swin_small_patch4_window7_224"
+                },
+            },
+            "ag_fit_args": {
+                "time_limit": 600,
+                "hyperparameters": {
+                    "env.precision": "bf16-mixed",
+                    "env.per_gpu_batch_size": 4,
+                    "env.batch_size": 4,
+                    "optimization.efficient_finetune": "lora",
+                    "optimization.log_every_n_steps": 2,
+                    "model.timm_image.checkpoint_name": "swin_small_patch4_window7_224",
+                },
+            },
+        },
+        "label_column": "label",
+    }
+
+    task_id = celery_client.send_task(
+        "model_service.generic_cloud_training.train",
         kwargs={
             "request": payload,
         },

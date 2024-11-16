@@ -1,10 +1,12 @@
-
+# $1 -> task_id (because we may use one instance for multiple trainings or even deployments)
 pip install -r requirements.txt
 
-wget -O trained_model.zip $1
+mkdir $1
 
-unzip trained_model.zip
+wget -O ./$1/trained_model.zip $2
 
-export INFERENCE_SERVICE_PORT=$2
+unzip ./$1/trained_model.zip -d ./$1
 
-bentoml serve service:ImageClassifyService 
+# TODO: handle port conflicts when there are multiple deployments on a single instance 
+
+bentoml serve service:ImageClassifyService --port $3

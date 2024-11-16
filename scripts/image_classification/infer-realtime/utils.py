@@ -19,6 +19,7 @@ class BaseRequest(BaseModel):
     projectName: str = Field(description="Project name")
     runName: str = Field(description="Run name")
     task: str = Field(description="task to be performed")
+    task_id: str = Field(description="Task ID")
 
 class DeployRequest(BaseRequest):
     task: str = Field(description="task to be performed", default="IMAGE_CLASSIFICATION")

@@ -21,8 +21,8 @@ class BaseService():
         #     return None
         pass
 
-    def load_model_metadata(self, userEmail: str, projectName: str, runName: str):
-        with open(f"./model/metadata.json", "r") as f:
+    def load_model_metadata(self, userEmail: str, projectName: str, runName: str, taskID: str):
+        with open(f"./{taskID}/model/metadata.json", "r") as f:
             labels = json.load(f)['labels']
         self.model_metadata = {"class_names": labels}
         return None
@@ -34,10 +34,11 @@ class BaseService():
         projectName = params["projectName"]
         runName = params["runName"]
         task = params["task"]
+        task_id = params["task_id"]
         try:
             if task not in SPECIAL_TASKS:
-                self.load_model_and_model_info(userEmail, projectName, runName)
-                self.load_model_metadata(userEmail, projectName, runName)
+                self.load_model_and_model_info(userEmail, projectName, runName, task_id)
+                self.load_model_metadata(userEmail, projectName, runName, task_id)
             else:
                 self.load_special_models(userEmail, projectName, runName, task)
             self.warmup(task)
@@ -57,11 +58,11 @@ class BaseService():
             return {"status": "success", "message": "Model deployed successfully"}
         
     # FIX RELATIVE PATH ERROR
-    def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str) -> None:
+    def load_model_and_model_info(self, userEmail: str, projectName: str, runName: str, taskID: str) -> None:
     
         
         try:
-            self.ort_sess = ort.InferenceSession(f'./model/model.onnx', 
+            self.ort_sess = ort.InferenceSession(f'./{taskID}/model/model.onnx', 
                                                  providers=['AzureExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'])
             self.input_names = [in_param.name for in_param in self.ort_sess.get_inputs()]
             print("Model deploy successfully")

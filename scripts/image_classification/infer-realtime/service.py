@@ -24,7 +24,6 @@ import os
     resources={"cpu": "1", "gpu": 1},
     traffic={"timeout": 500},
     http={
-        "port": int(os.environ["INFERENCE_SERVICE_PORT"]),
         "cors": {
             "enabled": True,
             "access_control_allow_origins": ["*"],

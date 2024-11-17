@@ -36,6 +36,7 @@ import asyncio
 from typing import Optional, Union
 import torch
 import json
+import sys
 
 
 TEMP_DIR = "./tmp"
@@ -94,12 +95,11 @@ class AutogluonTrainer(object):
             if model_path.exists():
                 shutil.rmtree(model_path)
 
+            from autogluon.multimodal import MultiModalPredictor
             predictor = MultiModalPredictor(
-                label=label, path=str(model_path), **self.model_args
+                label=label, path=str(model_path), verbosity=3, enable_progress_bar=False, **self.model_args
             )
             print("created predictor")
-
-            logging.basicConfig(level=logging.DEBUG)
 
             train_data = pd.read_csv(train_data_path)
 
@@ -111,7 +111,7 @@ class AutogluonTrainer(object):
             )
 
             exported_path = predictor.export_onnx(data=train_data[0:1], path=str(model_path), batch_size=4, truncate_long_and_double=True)
-
+            logging.basicConfig(level=logging.INFO)
             print(predictor.eval_metric)
             
             metadata = {
@@ -195,25 +195,10 @@ def train(task_id: str, request: dict):
 
     try:
 
-        # OLD
-        # user_dataset_path = (
-        #     f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/dataset/"
-        # )
-        # os.makedirs(user_dataset_path, exist_ok=True)
-        # user_model_path = f"{TEMP_DIR}/{request['userEmail']}/{request['projectName']}/trained_models/{request['runName']}/{task_id}"
-
-        # train_df = download_dataset2(
-        #     user_dataset_path,
-        #     request["dataset_url"],
-        #     request["dataset_download_method"],
-        # )
-        # train_df, test_df = train_test_split(train_df, test_size=0.2)
-
-
         # TEMPORARY
-        user_dataset_path = f"./dataset"
+        user_dataset_path = f"./{task_id}/dataset"
         os.makedirs(user_dataset_path, exist_ok=True)
-        user_model_path = f"./model"
+        user_model_path = f"./{task_id}/model"
         train_df = pd.read_csv(f"{user_dataset_path}/train.csv")
         
         train_df, test_df = train_test_split(train_df, test_size=0.2)
@@ -287,6 +272,7 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser()
         parser.add_argument("--training-time", type=int, default=60)
         parser.add_argument("--presets", type=str, required=True, default="medium_quality")
+        parser.add_argument("--task-id", type=str, required=True, default="abc123")
 
         args = parser.parse_args()
 
@@ -296,7 +282,7 @@ if __name__ == "__main__":
         print(DEFAULT_TRAINING_ARGUMENT)
 
         # TEMPORARY
-        res = train(task_id="temp", request=DEFAULT_TRAINING_ARGUMENT)
+        res = train(task_id=args.task_id, request=DEFAULT_TRAINING_ARGUMENT)
         print(res)
 
     except Exception as e:

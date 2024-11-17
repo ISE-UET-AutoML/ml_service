@@ -16,7 +16,7 @@ import argparse
 
 def preprocess_image_dataset(
     dataset_dir: str,
-    dataset_url: str,
+    dataset_label_url: str,
     method: str,
     format: str | None = None,
 ) -> pandas.DataFrame:
@@ -35,12 +35,12 @@ def preprocess_image_dataset(
     if method != "data_service":
         raise ValueError(f"Method {method} not supported")
 
-    dataset_url = f"{os.environ['DATASERVICE_URL']}/ls/task/{dataset_url}/export_for_training"
-
-    res = requests.get(dataset_url)
+    res = requests.get(dataset_label_url)
     if res.status_code >= 300:
         raise ValueError("Error in downloading dataset")
     data = res.json()["data"]
+
+
 
 
     for data_point in data:
@@ -62,10 +62,10 @@ def preprocess_image_dataset(
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-path", type=str, required=True, default="./dataset")
-    parser.add_argument("--dataset-url", type=str, required=True)
+    parser.add_argument("--local-data-path", type=str, required=True, default="./dataset")
+    parser.add_argument("--dataset-label-url", type=str, default="temp")
 
     args = parser.parse_args()
 
-    df = preprocess_image_dataset(args.data_path, args.dataset_url, "data_service")
+    df = preprocess_image_dataset(args.local_data_path, args.dataset_label_url, "data_service")
     print("preprocess done!")

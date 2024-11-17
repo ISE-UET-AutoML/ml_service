@@ -1,8 +1,13 @@
 import configparser
 import datetime
 import pytz
-
 import sys
+
+# settings.py
+import os
+
+
+
 
 cfg = configparser.ConfigParser()
 cfg.read("./environment.ini")
@@ -63,3 +68,25 @@ REFRESH_TOKEN = BACKEND["REFRESH_TOKEN_SECRET"]
 # =========================================================================
 DATASERVICE = cfg["data_service"]
 DATASERVICE_HOST = DATASERVICE["host"]
+
+# =========================================================================
+#                          VASTAI INFORMATION
+# =========================================================================
+VAST_AI_API_KEY = cfg["vastai"]["API_KEY"]
+
+# =========================================================================
+#                          AWS INFORMATION
+# =========================================================================
+
+BUCKET_NAME = cfg["aws"]["BUCKET_NAME"]
+AWS_ACCESS_KEY_ID = cfg["aws"]["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = cfg["aws"]["AWS_SECRET_ACCESS_KEY"]
+BUCKET_REGION = cfg["aws"]["BUCKET_REGION"]
+
+
+# =========================================================================
+#                          RESOURCE_SERVICE INFORMATION
+# =========================================================================
+
+CLOUD_INSTANCE_SERVICE_URL = cfg["resource_service"]["HOST"]
+REALTIME_INFERENCE_PORT = cfg["resource_service"]["REALTIME_INFERENCE_PORT"]

@@ -1,8 +1,14 @@
 #!/bin/bash
 
 
-rm -r ./dataset
+rm -r ./$1/dataset
 
-rm -r ./model
+rm -r ./$1/model
 
-rm trained_model.zip
+rm -r ./$1/*.zip
+
+rm -r ./$1/training_logs.txt
+
+rm -r ./$1/*.json
+
+rmdir $1

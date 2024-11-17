@@ -21,39 +21,37 @@ from pathlib import Path
 import requests
 from settings.config import CLOUD_INSTANCE_SERVICE_URL, REALTIME_INFERENCE_PORT
 import paramiko
+import json
+
+class DeployProcessConfig:
+    def __init__(self, 
+                 saved_model_url: str,
+                 inference_script_url: str,
+                 task_id: str, 
+                 instance_info: dict):
+        self.saved_model_url = saved_model_url
+        self.inference_script_url = inference_script_url
+        self.task_id = task_id
+        self.instance_info = instance_info
 
 def deploy(request: dict):
     print("Cloud Deploy request received")
     start = perf_counter()
     try:
-        # defines necessary urls
-        # model_bucket_path = f"{request['userID']}/{request['projectID']}/{task_id}/trained_model.zip"
-        # saved_model_url = create_presigned_post(model_bucket_path)
-        # dataset_url = request["dataset_url"]
-        # dataset_label_url = request["dataset_label_url"]
-        # train_script_url = get_training_script_url(request['task'])
+        model_bucket_path = f"{request['username']}/{request['project_id']}/{request['task_id']}/trained_model.zip"
         
-        model_bucket_path = f"{request['project_id']}/{request['task_id']}/trained_model.zip"
-        saved_model_url = create_presigned_post(model_bucket_path)
+        saved_model_url = create_presigned_url(model_bucket_path)
         inference_script_url = get_inference_script_url(request['task'], request['deploy_type'])
+    
         
-        # create cloud instance
+        deploy_config = DeployProcessConfig(
+            saved_model_url=saved_model_url,
+            inference_script_url=inference_script_url,
+            task_id=request["task_id"],
+            instance_info=request["instance_info"]
+        )
         
-        # instance_payload = {
-        #     "task": request["task"],
-        #     "training_time": request["training_time"],
-        #     "presets": request["presets"],
-        # }
-        
-        # instance_info = requests.post(F"{CLOUD_INSTANCE_SERVICE_URL}/create_instance", json=instance_payload).json()
-        # # response include instance_id, instance_ip, instance_port
-        
-        default_instance_id = 13636552
-        instance_info = requests.get(f"{CLOUD_INSTANCE_SERVICE_URL}/instances/{default_instance_id}").json()
-        print(instance_info)
-        
-        
-        deploy_response = execute_deploy_process(saved_model_url, inference_script_url, request["task_id"], instance_info)
+        deploy_response = execute_deploy_process(deploy_config)
         
         print(deploy_response)
         
@@ -64,7 +62,7 @@ def deploy(request: dict):
         end = perf_counter()
         
         return {
-            "deployed_model_url": f"{instance_info['public_ip']}:{instance_info['host_port']}",
+            "deployed_model_url": deploy_response["deploy_url"],
             "deploy_time": end - start,
         }
 
@@ -73,18 +71,18 @@ def deploy(request: dict):
         return {"error": str(e)}
 
 
-def execute_deploy_process(saved_model_url, infer_script_url, task_id, instance_info: dict):
+def execute_deploy_process(config: DeployProcessConfig):
     # Define your connection details (get from instance service)
-    ip = instance_info["public_ip"]
-    port = instance_info["ssh_port"]
+    ip = config.instance_info["public_ip"]
+    port = config.instance_info["ssh_port"]
     username = "root"
     
     
     
-    private_key_path = get_private_key_filename(task_id)
+    private_key_path = get_private_key_filename(config.task_id)
     
     # Attach the public key to the instance
-    attach_response = attach_ssh_key_to_instance(task_id, instance_info["id"])
+    attach_response = attach_ssh_key_to_instance(config.task_id, config.instance_info["id"])
     
     print(attach_response)
 
@@ -96,8 +94,31 @@ def execute_deploy_process(saved_model_url, infer_script_url, task_id, instance_
 
     # screen, nohup
     # # set up libs
+    check_setup(ssh_client, config.inference_script_url)
+
+    activate_env_command = "source /opt/conda/bin/activate base"
+
+
+    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source setup.sh '{config.task_id}' '{config.saved_model_url}' '{REALTIME_INFERENCE_PORT}'")
+    print("Output: \n", stdout.read().decode())
+    print("Errors:", stderr.read().decode())
+
+    
+    # stdin, stdout, stderr = ssh_client.exec_command(f"source cleanup.sh '{config.task_id}'")
+    # print("Errors:", stderr.read().decode())
+    
+    # Close the connection
+    ssh_client.close()
+    return {"status": "success", "deploy_url": f"http://{config.instance_info['public_ip']}:{REALTIME_INFERENCE_PORT}"}
+
+
+def check_setup(ssh_client, infer_script_url):
+    # check if the setup is correct
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -f infer_script.zip && echo 'exists' || echo 'missing'")
+    if "exists" in stdout.read().decode():
+        return
+    
     stdin, stdout, stderr = ssh_client.exec_command(f"sudo apt-get install screen unzip nano zsh htop default-jre zip -y")
-    # print("Output: \n", stdout.read().decode())
     print("Errors:", stderr.read().decode())
 
     # pull dataset
@@ -106,14 +127,3 @@ def execute_deploy_process(saved_model_url, infer_script_url, task_id, instance_
 
     stdin, stdout, stderr = ssh_client.exec_command(f"unzip infer_script.zip")
     print("Errors:", stderr.read().decode())
-
-    activate_env_command = "source /opt/conda/bin/activate base"
-
-
-    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source setup.sh '{saved_model_url}' '{REALTIME_INFERENCE_PORT}'")
-    print("Output: \n", stdout.read().decode())
-    print("Errors:", stderr.read().decode())
-
-    # Close the connection
-    ssh_client.close()
-    return {"status": "success"}

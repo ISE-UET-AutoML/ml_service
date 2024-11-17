@@ -5,7 +5,7 @@ mkdir $1
 
 wget -O ./$1/trained_model.zip $2
 
-unzip ./$1/trained_model.zip -d ./$1
+unzip ./$1/trained_model.zip -d ./
 
 # TODO: handle port conflicts when there are multiple deployments on a single instance 
 

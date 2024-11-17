@@ -74,17 +74,14 @@ def train(task_id: str, request: dict):
         
         print(train_response)
         
-        return {"status": "success", "data": train_response}
         
-        # shutdown_response = requests.post(F"{CLOUD_INSTANCE_SERVICE_URL}/shutdown_instance", json={"instance_id": instance_info["id"]}).json()
-        
-        # print(shutdown_response)
         
         end = perf_counter()
         
         return {
             "training_evaluation_time": end - start,
             "saved_model_path": saved_model_url,
+            "data": train_response
         }
 
     except Exception as e:
@@ -117,23 +114,9 @@ def execute_training_process(config: TrainingProcessConfig):
         return {"status": "error", "error": str(e)}
     
     # screen, nohup
-    # stdin, stdout, stderr = ssh_client.exec_command(f"ls")
-    # # print("Output: \n", stdout.read().decode())
-    # print("Errors:", stderr.read().decode())
     
-    # return {"status": "success", "error": "No error"}
-    
-    # # set up libs
-    stdin, stdout, stderr = ssh_client.exec_command(f"sudo apt-get install screen unzip nano zsh htop default-jre zip -y")
-    # print("Output: \n", stdout.read().decode())
-    print("Errors:", stderr.read().decode())
-
-    # pull dataset
-    stdin, stdout, stderr = ssh_client.exec_command(f"wget -O train_script.zip '{config.train_script_url}'")
-    print("Errors:", stderr.read().decode())
-
-    stdin, stdout, stderr = ssh_client.exec_command(f"unzip train_script.zip")
-    print("Errors:", stderr.read().decode())
+    # check if the setup is there
+    check_setup(ssh_client, config.train_script_url)
 
     activate_env_command = "source /opt/conda/bin/activate base"
 
@@ -154,3 +137,20 @@ def execute_training_process(config: TrainingProcessConfig):
     # Close the connection
     ssh_client.close()
     return {"status": "success", "model_url": config.saved_model_url, "model_fit_history_url": config.saved_model_fit_history_url}
+
+
+def check_setup(ssh_client, train_script_url):
+    # check if the setup is correct
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -f train_script.zip && echo 'exists' || echo 'missing'")
+    if "exists" in stdout.read().decode():
+        return
+    
+    stdin, stdout, stderr = ssh_client.exec_command(f"sudo apt-get install screen unzip nano zsh htop default-jre zip -y")
+    print("Errors:", stderr.read().decode())
+
+    # pull dataset
+    stdin, stdout, stderr = ssh_client.exec_command(f"wget -O train_script.zip '{train_script_url}'")
+    print("Errors:", stderr.read().decode())
+
+    stdin, stdout, stderr = ssh_client.exec_command(f"unzip train_script.zip")
+    print("Errors:", stderr.read().decode())

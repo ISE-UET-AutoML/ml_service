@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .TrainRequest import SimpleTrainRequest, CloudTrainRequest
+from .TrainRequest import SimpleTrainRequest, CloudTrainRequest, CloudDeployRequest
 from settings.config import BACKEND_HOST, celery_client
 
 router = APIRouter()
@@ -179,6 +179,35 @@ async def train_generic_cloud(request: CloudTrainRequest):
 
     task_id = celery_client.send_task(
         "model_service.generic_cloud_training.train",
+        kwargs={
+            "request": payload,
+        },
+        queue="ml_celery",
+    )
+
+    return {
+        "task_id": str(task_id),
+        "send_status": "SUCCESS",
+    }
+
+@router.post("/v2/generic_cloud_deploy", tags=["v2"])
+async def deploy_generic_cloud(request: CloudDeployRequest):
+    payload = {
+        "username": request.username,
+        "task": request.task,
+        "task_id": request.task_id,
+        "project_id": request.project_id,
+        "deploy_type": request.deploy_type,
+        "instance_info": {
+            "id": request.instance_info.id,
+            "ssh_port": request.instance_info.ssh_port,
+            "public_ip": request.instance_info.public_ip,
+            "deploy_port": request.instance_info.deploy_port,
+        },
+    }
+
+    task_id = celery_client.send_task(
+        "model_service.generic_cloud_training.deploy",
         kwargs={
             "request": payload,
         },

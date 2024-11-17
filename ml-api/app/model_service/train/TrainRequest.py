@@ -157,3 +157,12 @@ class CloudTrainRequest(BaseModel):
     training_time: int = 60
     presets: str = "high_quality"
     instance_info: InstanceInfo
+
+
+class CloudDeployRequest(BaseModel):
+    username: str
+    task: str
+    task_id: str
+    project_id: str
+    deploy_type: str = "REALTIME"
+    instance_info: InstanceInfo

@@ -161,37 +161,21 @@ async def train_multimodal_classification(request: SimpleTrainRequest):
 @router.post("/v2/generic_cloud_training", tags=["v2"])
 async def train_generic_cloud(request: CloudTrainRequest):
     payload = {
-        "userEmail": request.userEmail,
+        "username": request.username,
         "task": request.task,
-        "projectName": request.projectId,
+        "project_id": request.project_id,
         "training_time": request.training_time,
-        "runName": request.runName,
         "presets": request.presets,
         "dataset_url": request.dataset_url,
         "dataset_label_url": request.dataset_label_url,
-        "dataset_download_method": "data_service",
-        "training_argument": {
-            "data_args": {},
-            "ag_model_args": {
-                "pretrained": True,
-                "hyperparameters": {
-                    "model.timm_image.checkpoint_name": "swin_small_patch4_window7_224"
-                },
-            },
-            "ag_fit_args": {
-                "time_limit": 600,
-                "hyperparameters": {
-                    "env.precision": "bf16-mixed",
-                    "env.per_gpu_batch_size": 4,
-                    "env.batch_size": 4,
-                    "optimization.efficient_finetune": "lora",
-                    "optimization.log_every_n_steps": 2,
-                    "model.timm_image.checkpoint_name": "swin_small_patch4_window7_224",
-                },
-            },
+        "instance_info": {
+            "id": request.instance_info.id,
+            "ssh_port": request.instance_info.ssh_port,
+            "public_ip": request.instance_info.public_ip,
+            "deploy_port": request.instance_info.deploy_port,
         },
-        "label_column": "label",
     }
+    
 
     task_id = celery_client.send_task(
         "model_service.generic_cloud_training.train",

@@ -14,6 +14,7 @@ from . import _img_img_semantic_matching
 from . import _time_series
 from . import _text_prediction
 from . import _generic_cloud_training
+from . import _generic_cloud_deploy
 from settings.config import BACKEND_HOST
 
 
@@ -129,4 +130,13 @@ def generic_multimodal_temp_predict(self, request: dict):
 )
 def generic_cloud_train(self, request: dict):
     result = _generic_cloud_training.train(self.request.id, request)
+    return result
+
+@shared_task(
+    bind=True,
+    name="model_service.generic_cloud_training.deploy",
+    base=BaseTrainTask,
+)
+def generic_cloud_deploy(self, request: dict):
+    result = _generic_cloud_deploy.deploy(request)
     return result

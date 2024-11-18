@@ -191,4 +191,7 @@ docker-compose.yml
 environment.ini
 environment.ini
 docker-compose.yml
-environment.ini
+
+instance_ssh_keys
+
+gpu_names_cache.json

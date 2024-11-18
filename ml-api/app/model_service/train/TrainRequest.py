@@ -46,7 +46,6 @@ class TrainRequest(BaseModel):
         title="Training arguments.",
     )
 
-
 class TabularTrainRequest(TrainRequest):
     presets: str | list[str] = Field(default="good_quality", title="Presets")
     label_column: str = Field(
@@ -141,3 +140,29 @@ class TimeSeriesTrainRequest(TrainRequest):
         default=[],
         description="known covariates column in train dataset, if a column is not in known_covariates, it will be interpreted as past covariates",
     )
+
+
+class InstanceInfo(BaseModel):
+    id: int
+    ssh_port: str
+    public_ip: str
+    deploy_port: str
+
+class CloudTrainRequest(BaseModel):
+    username: str
+    dataset_url: str
+    dataset_label_url: str
+    task: str
+    project_id: str
+    training_time: int = 60
+    presets: str = "high_quality"
+    instance_info: InstanceInfo
+
+
+class CloudDeployRequest(BaseModel):
+    username: str
+    task: str
+    task_id: str
+    project_id: str
+    deploy_type: str = "REALTIME"
+    instance_info: InstanceInfo

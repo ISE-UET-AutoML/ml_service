@@ -1,0 +1,4 @@
+autogluon.multimodal==1.1.0
+split-folders==0.5.1
+onnx
+onnxruntime

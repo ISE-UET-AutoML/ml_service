@@ -102,6 +102,8 @@ def execute_deploy_process(config: DeployProcessConfig):
     stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source setup.sh '{config.task_id}' '{config.saved_model_url}' '{REALTIME_INFERENCE_PORT}'")
     print("Output: \n", stdout.read().decode())
     print("Errors:", stderr.read().decode())
+    
+    print("Finished deployment" + "\n")
 
     
     # stdin, stdout, stderr = ssh_client.exec_command(f"source cleanup.sh '{config.task_id}'")
@@ -116,6 +118,7 @@ def check_setup(ssh_client, infer_script_url):
     # check if the setup is correct
     stdin, stdout, stderr = ssh_client.exec_command(f"test -f infer_script.zip && echo 'exists' || echo 'missing'")
     if "exists" in stdout.read().decode():
+        print("Instance already setup")
         return
     
     stdin, stdout, stderr = ssh_client.exec_command(f"sudo apt-get install screen unzip nano zsh htop default-jre zip -y")

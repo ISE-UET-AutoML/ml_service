@@ -121,18 +121,20 @@ def execute_training_process(config: TrainingProcessConfig):
     activate_env_command = "source /opt/conda/bin/activate base"
 
     stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && pip install -r requirements.txt")
-    print("Output: \n", stdout.read().decode())
     print("Errors:", stderr.read().decode())
+    
+    print("Finished installing dependencies" + "\n")
 
     
     stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source train.sh '{config.task_id}' '{config.dataset_url}' '{config.dataset_label_url}' '{config.training_time}' '{config.presets}' 'trained_model.zip' '{config.saved_model_url}' '{config.saved_model_fit_history_url}'")
-    print("Output: \n", stdout.read().decode())
     print("Errors:", stderr.read().decode())
+    
+    print("Finished training" + "\n")
 
 
-    stdin, stdout, stderr = ssh_client.exec_command(f"source cleanup.sh '{config.task_id}'")
-    print("Output: \n", stdout.read().decode())
-    print("Errors:", stderr.read().decode())
+    # stdin, stdout, stderr = ssh_client.exec_command(f"source cleanup.sh '{config.task_id}'")
+    # print("Output: \n", stdout.read().decode())
+    # print("Errors:", stderr.read().decode())
 
     # Close the connection
     ssh_client.close()
@@ -143,8 +145,10 @@ def check_setup(ssh_client, train_script_url):
     # check if the setup is correct
     stdin, stdout, stderr = ssh_client.exec_command(f"test -f train_script.zip && echo 'exists' || echo 'missing'")
     if "exists" in stdout.read().decode():
+        print("Instance already setup")
         return
     
+    print("Setting up instance")
     stdin, stdout, stderr = ssh_client.exec_command(f"sudo apt-get install screen unzip nano zsh htop default-jre zip -y")
     print("Errors:", stderr.read().decode())
 

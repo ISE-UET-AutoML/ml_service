@@ -19,8 +19,10 @@ from .TrainRequest import (
     TrainRequest,
 )
 from settings.config import TEMP_DIR
+import requests
 import os
 from autogluon.tabular import TabularPredictor
+from utils.aws import create_presigned_url
 
 router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
@@ -44,30 +46,17 @@ async def get_fit_history(
     runName: str = "ISE",
     task_id: str = "lastest",
 ):
-    # load event file
-    model_path = f"{TEMP_DIR}/{userEmail}/{projectName}/trained_models/{runName}"
-    if task_id == "lastest":
-        model_path = find_latest_model(model_path).removesuffix("/model.ckpt")
-    else:
-        model_path = f"{model_path}/{task_id}"
-    event_file = ""
-    for file in os.listdir(model_path):
-        if file.startswith("events.out.tfevents"):
-            event_file = f"{model_path}/{file}"
-            break
-    if event_file == "":
-        return {"error": "No event file found"}
-
-    ea = EventAccumulator(event_file).Reload()
-
-    tags = ea.Tags()
-    scalars = tags["scalars"]
-    scalars_data = {}
-    for scalar in scalars:
-        df = pd.DataFrame(ea.Scalars(scalar), index=None)
-        csv = df.to_csv()
-        scalars_data[scalar] = csv
-    return {"fit_history": {"scalars": scalars_data}}
+    
+    fit_history_path = f"{userEmail}/{projectName}/{task_id}/model_fit_history.json"
+    
+    fit_history_url = create_presigned_url(fit_history_path)
+    
+    res = requests.get(fit_history_url)
+    
+    print(res)
+    
+    
+    return res.json()
 
 @router.get(
     "/tabular_model_ranking",

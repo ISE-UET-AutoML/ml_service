@@ -138,5 +138,5 @@ def generic_cloud_train(self, request: dict):
     base=BaseTrainTask,
 )
 def generic_cloud_deploy(self, request: dict):
-    result = _generic_cloud_deploy.deploy(request)
+    result = _generic_cloud_deploy.deploy(self.request.id, request)
     return result

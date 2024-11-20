@@ -119,14 +119,10 @@ def execute_training_process(config: TrainingProcessConfig):
     check_setup(ssh_client, config.train_script_url)
 
     activate_env_command = "source /opt/conda/bin/activate base"
-
-    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && pip install -r requirements.txt")
-    print("Errors:", stderr.read().decode())
     
-    print("Finished installing dependencies" + "\n")
-
     
-    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source train.sh '{config.task_id}' '{config.dataset_url}' '{config.dataset_label_url}' '{config.training_time}' '{config.presets}' 'trained_model.zip' '{config.saved_model_url}' '{config.saved_model_fit_history_url}'")
+    print("Start training" + "\n")
+    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source train.sh '{config.task_id}' '{config.dataset_url}' '{config.dataset_label_url}' '{config.training_time}' '{config.presets}' 'trained_model.zip' '{config.saved_model_url}' '{config.saved_model_fit_history_url + 'abc'}'")
     print("Errors:", stderr.read().decode())
     
     print("Finished training" + "\n")
@@ -158,3 +154,10 @@ def check_setup(ssh_client, train_script_url):
 
     stdin, stdout, stderr = ssh_client.exec_command(f"unzip train_script.zip")
     print("Errors:", stderr.read().decode())
+    
+    activate_env_command = "source /opt/conda/bin/activate base"
+
+    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && pip install -r requirements.txt")
+    print("Errors:", stderr.read().decode())
+    
+    print("Finished installing dependencies" + "\n")

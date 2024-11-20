@@ -166,3 +166,8 @@ class CloudDeployRequest(BaseModel):
     project_id: str
     deploy_type: str = "REALTIME"
     instance_info: InstanceInfo
+    
+
+class TrainingProgressRequest(BaseModel):
+    task_id: str
+    instance_info: InstanceInfo

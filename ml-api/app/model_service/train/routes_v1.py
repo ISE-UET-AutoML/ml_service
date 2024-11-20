@@ -16,13 +16,15 @@ from .TrainRequest import (
     TTSemanticMatchingTrainRequest,
     TabularTrainRequest,
     TimeSeriesTrainRequest,
-    TrainRequest,
+    TrainingProgressRequest
 )
 from settings.config import TEMP_DIR
 import requests
 import os
 from autogluon.tabular import TabularPredictor
 from utils.aws import create_presigned_url
+from utils.ssh_utils import connect_with_retries, get_private_key_filename
+import re
 
 router = APIRouter()
 router.include_router(temp_predict_router, prefix="")
@@ -34,6 +36,7 @@ from .temp_predict import load_model, load_model_from_path, find_latest_model, f
 
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 import pandas as pd
+import paramiko
 
 
 @router.get(
@@ -260,4 +263,74 @@ def train_time_series(request: TimeSeriesTrainRequest):
     return {
         "task_id": str(task_id),
         "send_status": "SUCCESS",
+    }
+
+@router.post(
+    "/training_progress",
+    description=("Get training progress of a training job."),
+)
+async def get_training_progress(
+    req: TrainingProgressRequest
+):
+    
+    ip = req.instance_info.public_ip
+    port = req.instance_info.ssh_port
+    username = "root"
+    
+    # input: task_id, instance_info
+    
+    # use instance_info to ssh into the instance and get training progress from a txt file
+    print(req)
+    
+    private_key_path = get_private_key_filename(req.task_id)
+    
+    # Connect to the remote server with custom port
+    try:
+        ssh_client = connect_with_retries(ip, port, username, private_key_path, max_retries=10, delay=5)
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+    
+    latest_epoch = None
+    metrics = {}
+    
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -d ./{req.task_id} && echo 1 || echo 0")
+    print("Errors:", stderr.read().decode())
+    
+    if not int(stdout.read().decode()):
+        return {"status": "SETTING_UP", "latest_epoch": None, "metrics": {}}
+    
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -f ./{req.task_id}/training_logs.txt && echo 1 || echo 0")
+    print("Errors:", stderr.read().decode())
+    
+    if not int(stdout.read().decode()):
+        return {"status": "DOWNLOADING_DATA", "latest_epoch": None, "metrics": {}}
+    
+    stdin, stdout, stderr = ssh_client.exec_command(f"cat ./{req.task_id}/training_logs.txt")
+    print("Errors:", stderr.read().decode())
+    
+    log_data = stdout.read().decode()
+    status = "TRAINING"
+    # Extract data from logs
+    
+    # Regular expressions
+    epoch_pattern = re.compile(r"Epoch (\d+),")
+    metric_pattern = re.compile(r"'(val_\w+)' reached ([\d\.]+)")
+    
+    
+    for line in log_data.splitlines():
+        # Extract the epoch number
+        epoch_match = epoch_pattern.search(line)
+        if epoch_match:
+            latest_epoch = int(epoch_match.group(1))
+
+        # Extract metrics and their values
+        metric_matches = metric_pattern.findall(line)
+        for metric, value in metric_matches:
+            metrics[metric] = float(value)
+
+    # Return the extracted information
+    return {
+        "status": status,
+        "latest_epoch": latest_epoch,
+        "metrics": metrics
     }

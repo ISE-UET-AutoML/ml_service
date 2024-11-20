@@ -2,4 +2,3 @@
 
 - `pip install -r requirements.txt`
 - `source start.sh`
-

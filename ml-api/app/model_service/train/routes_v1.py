@@ -290,19 +290,32 @@ async def get_training_progress(
     except Exception as e:
         return {"status": "error", "error": str(e)}
     
+    latest_epoch = None
+    metrics = {}
+    
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -d ./{req.task_id} && echo 1 || echo 0")
+    print("Errors:", stderr.read().decode())
+    
+    if not int(stdout.read().decode()):
+        return {"status": "SETTING_UP", "latest_epoch": None, "metrics": {}}
+    
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -f ./{req.task_id}/training_logs.txt && echo 1 || echo 0")
+    print("Errors:", stderr.read().decode())
+    
+    if not int(stdout.read().decode()):
+        return {"status": "DOWNLOADING_DATA", "latest_epoch": None, "metrics": {}}
+    
     stdin, stdout, stderr = ssh_client.exec_command(f"cat ./{req.task_id}/training_logs.txt")
     print("Errors:", stderr.read().decode())
     
     log_data = stdout.read().decode()
+    status = "TRAINING"
     # Extract data from logs
     
     # Regular expressions
     epoch_pattern = re.compile(r"Epoch (\d+),")
     metric_pattern = re.compile(r"'(val_\w+)' reached ([\d\.]+)")
     
-    latest_epoch = None
-    metrics = {}
-
     
     for line in log_data.splitlines():
         # Extract the epoch number
@@ -317,6 +330,7 @@ async def get_training_progress(
 
     # Return the extracted information
     return {
+        "status": status,
         "latest_epoch": latest_epoch,
         "metrics": metrics
     }

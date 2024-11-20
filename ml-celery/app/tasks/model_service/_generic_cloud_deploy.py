@@ -34,7 +34,7 @@ class DeployProcessConfig:
         self.task_id = task_id
         self.instance_info = instance_info
 
-def deploy(request: dict):
+def deploy(task_id: str, request: dict):
     print("Cloud Deploy request received")
     start = perf_counter()
     try:
@@ -54,10 +54,6 @@ def deploy(request: dict):
         deploy_response = execute_deploy_process(deploy_config)
         
         print(deploy_response)
-        
-        # shutdown_response = requests.post(F"{CLOUD_INSTANCE_SERVICE_URL}/shutdown_instance", json={"instance_id": instance_info["id"]}).json()
-        
-        # print(shutdown_response)
         
         end = perf_counter()
         

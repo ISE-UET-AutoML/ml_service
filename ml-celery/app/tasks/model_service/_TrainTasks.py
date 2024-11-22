@@ -27,8 +27,8 @@ class BaseTrainTask(Task):
                 cookies={"accessToken": ACCESS_TOKEN},
             )
             print(res.text)
-        elif retval is not None: # currently used for deploy tasks to avoid redeliver after done
-            print(retval)
+        else: # currently used for deploy tasks to avoid redeliver after done
+            print("Task is done")
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """

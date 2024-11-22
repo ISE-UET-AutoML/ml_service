@@ -28,11 +28,21 @@ class DeployProcessConfig:
                  saved_model_url: str,
                  inference_script_url: str,
                  task_id: str, 
-                 instance_info: dict):
+                 instance_info: dict, task: str):
         self.saved_model_url = saved_model_url
         self.inference_script_url = inference_script_url
         self.task_id = task_id
         self.instance_info = instance_info
+        self.task = task
+
+def task_to_service(task: str):
+    match(task):
+        case "TEXT_CLASSIFICATION":
+            return "TextClassify"
+        case "TABULAR_CLASSIFICATION":
+            return "TabularClassify"
+        case "MULTIMODAL_CLASSIFICATION":
+            return "MultimodalClassify"
 
 def deploy(task_id: str, request: dict):
     print("Cloud Deploy request received")
@@ -48,7 +58,8 @@ def deploy(task_id: str, request: dict):
             saved_model_url=saved_model_url,
             inference_script_url=inference_script_url,
             task_id=request["task_id"],
-            instance_info=request["instance_info"]
+            instance_info=request["instance_info"],
+            task=request["task"]
         )
         
         deploy_response = execute_deploy_process(deploy_config)
@@ -94,10 +105,16 @@ def execute_deploy_process(config: DeployProcessConfig):
 
     activate_env_command = "source /opt/conda/bin/activate base"
 
-
-    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source setup.sh '{config.task_id}' '{config.saved_model_url}' '{REALTIME_INFERENCE_PORT}'")
-    print("Output: \n", stdout.read().decode())
-    print("Errors:", stderr.read().decode())
+    if config.task == "IMAGE_CLASSIFICATION":
+        # set up the environment
+        stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source setup.sh '{config.task_id}' '{config.saved_model_url}' '{REALTIME_INFERENCE_PORT}'")
+        print("Output: \n", stdout.read().decode())
+        print("Errors:", stderr.read().decode())
+    else:
+        # set up the environment
+        stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source setup.sh '{config.task_id}' '{config.saved_model_url}' '{task_to_service(config.task)}' '{REALTIME_INFERENCE_PORT}'")
+        print("Output: \n", stdout.read().decode())
+        print("Errors:", stderr.read().decode())
     
     print("Finished deployment" + "\n")
 

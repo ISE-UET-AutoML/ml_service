@@ -171,3 +171,8 @@ class CloudDeployRequest(BaseModel):
 class TrainingProgressRequest(BaseModel):
     task_id: str
     instance_info: InstanceInfo
+    
+
+class DeployProgressRequest(BaseModel):
+    task_id: str
+    instance_info: InstanceInfo

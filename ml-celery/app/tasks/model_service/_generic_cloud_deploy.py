@@ -117,7 +117,7 @@ def check_setup(ssh_client, infer_script_url):
         print("Instance already setup")
         return
     
-    stdin, stdout, stderr = ssh_client.exec_command(f"sudo apt-get install screen unzip nano zsh htop default-jre zip -y")
+    stdin, stdout, stderr = ssh_client.exec_command(f"sudo apt-get install screen unzip nano zsh htop lsof default-jre zip -y")
     print("Errors:", stderr.read().decode())
 
     # pull dataset

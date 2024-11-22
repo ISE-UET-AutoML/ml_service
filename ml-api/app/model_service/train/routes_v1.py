@@ -16,7 +16,8 @@ from .TrainRequest import (
     TTSemanticMatchingTrainRequest,
     TabularTrainRequest,
     TimeSeriesTrainRequest,
-    TrainingProgressRequest
+    TrainingProgressRequest,
+    DeployProgressRequest
 )
 from settings.config import TEMP_DIR
 import requests
@@ -333,4 +334,59 @@ async def get_training_progress(
         "status": status,
         "latest_epoch": latest_epoch,
         "metrics": metrics
+    }
+    
+@router.post(
+    "/deploy_status",
+    description=("Get deploy status of a deploy job."),
+)
+async def get_deploy_status(
+    req: DeployProgressRequest
+):
+    
+    ip = req.instance_info.public_ip
+    port = req.instance_info.ssh_port
+    username = "root"
+    
+    
+    # use instance_info to ssh into the instance and get deploy progress 
+    print(req)
+    
+    private_key_path = get_private_key_filename(req.task_id)
+    
+    # Connect to the remote server with custom port
+    try:
+        ssh_client = connect_with_retries(ip, port, username, private_key_path, max_retries=2, delay=5)
+    except Exception as e:
+        return {"status": "SETTING_UP", "error": str(e)}
+    
+    
+    # Test if the instance is already setup
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -d ./{req.task_id} && echo 1 || echo 0")
+    print("Errors:", stderr.read().decode())
+    
+    if not int(stdout.read().decode()):
+        return {"status": "SETTING_UP"}
+    
+    # Test if the instance is downloading the model
+    stdin, stdout, stderr = ssh_client.exec_command(f"test -d ./{req.task_id}/model && echo 1 || echo 0")
+    print("Errors:", stderr.read().decode())
+    
+    if not int(stdout.read().decode()):
+        return {"status": "DOWNLOADING_MODEL"}
+    
+    # Temporary hardcode value for all instances
+    container_port = 8680
+    
+    # Test if the instance is serving at the dedicated port 
+    stdin, stdout, stderr = ssh_client.exec_command(f"lsof -i :{container_port}")
+    print("Errors:", stderr.read().decode())
+    
+    output = stdout.read().decode()
+    print(output)
+    if output:
+        return {"status": "ONLINE"}
+    
+    return {
+        "status": "ERROR"
     }

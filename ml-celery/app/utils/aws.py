@@ -10,7 +10,10 @@ def get_training_script_url(task):
 
 
 def get_inference_script_url(task, deploy_type):
-    return create_presigned_url(f"scripts/{task.lower()}_infer.zip")
+    if task == "IMAGE_CLASSIFICATION":
+        return create_presigned_url(f"scripts/{task.lower()}_infer_gpu.zip")
+    else:
+        return create_presigned_url(f"scripts/generic_cloud_infer_gpu.zip")
 
 def create_presigned_url(object_name, bucket_name=BUCKET_NAME, expiration=36000):
     """Generate a presigned URL to share an S3 object

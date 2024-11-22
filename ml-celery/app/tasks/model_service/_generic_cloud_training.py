@@ -122,7 +122,7 @@ def execute_training_process(config: TrainingProcessConfig):
     
     
     print("Start training" + "\n")
-    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source train.sh '{config.task_id}' '{config.dataset_url}' '{config.dataset_label_url}' '{config.training_time}' '{config.presets}' 'trained_model.zip' '{config.saved_model_url}' '{config.saved_model_fit_history_url + 'abc'}'")
+    stdin, stdout, stderr = ssh_client.exec_command(f"{activate_env_command} && source train.sh '{config.task_id}' '{config.dataset_url}' '{config.dataset_label_url}' '{config.training_time}' '{config.presets}' 'trained_model.zip' '{config.saved_model_url}' '{config.saved_model_fit_history_url}'")
     print("Errors:", stderr.read().decode())
     
     print("Finished training" + "\n")
